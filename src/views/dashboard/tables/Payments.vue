@@ -240,6 +240,12 @@
                           Doc
                         </th>
                         <th class="text-center">
+                          Type
+                        </th>
+                        <th class="text-center">
+                          MG
+                        </th>
+                        <th class="text-center">
                           Call 68
                         </th>
                         <th class="text-center">
@@ -284,6 +290,12 @@
                       <tr>
                         <td class="text-center">
                           {{ item.details.doc_num }}
+                        </td>
+                        <td class="text-center">
+                          {{ item.details.service }}
+                        </td>
+                        <td class="text-center">
+                          {{ parseFloat(item.details.amount) }}
                         </td>
                         <td class="text-center">
                           {{ parseFloat(item.details.calls_local) }}
