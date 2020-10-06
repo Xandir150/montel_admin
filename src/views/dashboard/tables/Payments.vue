@@ -470,7 +470,7 @@
         }
       },
       loadDetails ({ item }) {
-        axios.get('https://admin.montelcompany.me/api/invoices?number=' + item.number + '&doc=' + item.place)
+        axios.get('https://admin.montelcompany.me/api/invoices?number=' + item.number + '&doc=' + item.place + '&service=' + item.service)
           .then(response => {
             item.details = response.data
           })
