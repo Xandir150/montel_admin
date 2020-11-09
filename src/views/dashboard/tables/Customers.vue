@@ -42,6 +42,58 @@
       </v-card>
     </v-dialog>
     <v-dialog
+      v-model="dialogChangeBalance"
+      max-width="350"
+    >
+      <v-card>
+        <v-card-title>
+          <span class="headline"> {{ formTitleChangeBalance }} баланса </span>
+          <v-spacer />
+        </v-card-title>
+        <v-card-text class="pb-6 pt-12 text-center">
+          <v-text-field
+            v-model="editedItem.name"
+            readonly
+            label="Клиенту"
+          />
+          <v-text-field
+            v-model="editedItem.phone"
+            readonly
+            label="Номер"
+          />
+          <v-text-field
+            label="Сумма"
+            suffix="€"
+          />
+          <v-text-field
+            v-model="editedItem.description"
+            :rules="[rules.required, rules.counter]"
+            required
+            label="Комментарий"
+            counter
+            maxlength="64"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="success"
+            text
+            @click="underConstructionMsg"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            class="mr-3"
+            text
+            @click="close"
+          >
+            No
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="dialog3"
       max-width="300"
     >
@@ -308,25 +360,39 @@
                 false-value="0"
                 true-value="1"
                 :value="item.status"
-                @change="setCustomerOtion(item.id, 'status', item.status)"
+                @change="setCustomerOption(item.id, 'status', item.status)"
               />
             </template>
             <template #[`item.charge`]="{ item }">
               <v-list-item three-line>
                 <v-list-item-content>
                   <v-list-item-subtitle>
-                    <v-icon
-                      @click="underConstructionMsg"
-                    >
-                      mdi-plus
-                    </v-icon>
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-icon
+                          v-bind="attrs"
+                          v-on="on"
+                          @click="setBalance(item,1)"
+                        >
+                          mdi-plus
+                        </v-icon>
+                      </template>
+                      <span>Увеличить баланс</span>
+                    </v-tooltip>
                   </v-list-item-subtitle>
                   <v-list-item-subtitle>
-                    <v-icon
-                      @click="underConstructionMsg"
-                    >
-                      mdi-minus
-                    </v-icon>
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-icon
+                          v-bind="attrs"
+                          v-on="on"
+                          @click="setBalance(item,0)"
+                        >
+                          mdi-minus
+                        </v-icon>
+                      </template>
+                      <span>Уменьшить баланс</span>
+                    </v-tooltip>
                   </v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -393,7 +459,7 @@
                         dense
                         outlined
                         value="item.credit"
-                        @change="setCustomerOtion(item.id,'credit',item.credit)"
+                        @change="setCustomerOption(item.id,'credit',item.credit)"
                       />
                     </v-col>
                     <v-col
@@ -492,6 +558,7 @@
   export default {
     data: () => ({
       dialogChangeTariff: false,
+      dialogChangeBalance: false,
       newTariffId: -1,
       dialog3: false,
       progressBar: true,
@@ -512,6 +579,8 @@
         balance: 0,
         email: 0,
         phone: 0,
+        route: 0,
+        description: '',
       },
       defaultItem: {
         id: 0,
@@ -523,11 +592,18 @@
         balance: 0.00,
       },
       tabs: 0,
+      rules: {
+        required: value => !!value || 'Required.',
+        counter: value => value.length <= 64 || 'Max 64 characters',
+      },
     }),
 
     computed: {
       formTitle () {
         return this.editedIndex === -1 ? 'New Customer' : 'Edit Customer'
+      },
+      formTitleChangeBalance () {
+        return this.editedItem.route === 0 ? 'Уменьшение' : 'Добавление'
       },
       headers () {
         return [
@@ -590,20 +666,6 @@
         console.log(this.tariffs[this.newTariffId].text)
         return this.tariffs[this.newTariffId].text
       },
-      // tabChange (obj, app = this) {
-      //   var filter = 'new'
-      //   if (obj !== 3) { filter = 'balance&val=' + obj }
-      //   var req = 'https://admin.montelcompany.me/api/customers?filter=' + filter
-      //   console.log(req)
-      //   axios
-      //     .get(req)
-      //     .then(function (response) {
-      //       app.customers = response.data
-      //     })
-      //     .catch(function (error) {
-      //       console.log(error)
-      //     })
-      // },
       tabChange: async function (obj, app = this) {
         app.progressBar = true
         var filter = 'new'
@@ -630,7 +692,12 @@
         this.newTariffId = selectObj
         this.dialogChangeTariff = true
       },
-      setCustomerOtion (userId, option, value) {
+      setBalance (item, route) {
+        this.editedItem = Object.assign({}, item)
+        this.editedItem.route = route
+        this.dialogChangeBalance = true
+      },
+      setCustomerOption (userId, option, value) {
         axios.post('https://admin.montelcompany.me/api/setCustomerOption', {
           id: userId,
           option: option,
@@ -656,6 +723,7 @@
         this.dialog = false
         this.dialog3 = false
         this.dialogChangeTariff = false
+        this.dialogChangeBalance = false
         this.$nextTick(() => {
           this.deleteItemIndex = -1
           this.editedItem = Object.assign({}, this.defaultItem)

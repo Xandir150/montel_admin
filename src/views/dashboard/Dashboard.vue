@@ -10,16 +10,16 @@
         lg="4"
       >
         <base-material-chart-card
-          :data="emailsSubscriptionChart.data"
-          :options="emailsSubscriptionChart.options"
-          :responsive-options="emailsSubscriptionChart.responsiveOptions"
+          :data="invoicesShart.data"
+          :options="invoicesShart.options"
+          :responsive-options="invoicesShart.responsiveOptions"
           color="#E91E63"
           hover-reveal
           type="Bar"
         >
-          <template v-slot:reveal-actions>
+          <!-- <template #reveal-actions>
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   color="info"
@@ -38,7 +38,7 @@
             </v-tooltip>
 
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   light
@@ -51,17 +51,17 @@
 
               <span>Change Date</span>
             </v-tooltip>
-          </template>
+          </template> -->
 
           <h4 class="card-title font-weight-light mt-2 ml-2">
-            Payments
+            Invoices
           </h4>
 
           <p class="d-inline-flex font-weight-light ml-2 mt-1">
-            All payments per month
+            Amount invices per month
           </p>
 
-          <template v-slot:actions>
+          <!-- <template #actions>
             <v-icon
               class="mr-1"
               small
@@ -69,7 +69,7 @@
               mdi-clock-outline
             </v-icon>
             <span class="caption grey--text font-weight-light">updated 10 minutes ago</span>
-          </template>
+          </template> -->
         </base-material-chart-card>
       </v-col>
 
@@ -84,9 +84,9 @@
           hover-reveal
           type="Line"
         >
-          <template v-slot:reveal-actions>
+          <template #reveal-actions>
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   color="info"
@@ -105,7 +105,7 @@
             </v-tooltip>
 
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   light
@@ -134,7 +134,7 @@
             <span class="green--text">55% </span>&nbsp; increase in today's payments
           </p>
 
-          <template v-slot:actions>
+          <template #actions>
             <v-icon
               class="mr-1"
               small
@@ -157,9 +157,9 @@
           color="info"
           type="Line"
         >
-          <template v-slot:reveal-actions>
+          <template #reveal-actions>
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   color="info"
@@ -178,7 +178,7 @@
             </v-tooltip>
 
             <v-tooltip bottom>
-              <template v-slot:activator="{ attrs, on }">
+              <template #activator="{ attrs, on }">
                 <v-btn
                   v-bind="attrs"
                   light
@@ -201,7 +201,7 @@
             Last Last Campaign Performance
           </p>
 
-          <template v-slot:actions>
+          <template #actions>
             <v-icon
               class="mr-1"
               small
@@ -222,7 +222,7 @@
           color="info"
           icon="mdi-account-arrow-left"
           title="New customers"
-          value="+245"
+          value="0"
           sub-icon="mdi-clock"
           sub-text="Just Updated"
           @click="color"
@@ -234,14 +234,21 @@
         sm="6"
         lg="3"
       >
-        <base-material-stats-card
-          color="primary"
-          icon="mdi-wallet"
-          title="Saldo"
-          value="7 502.521 €"
-          sub-icon="mdi-tag"
-          sub-text="Tracked from Google Analytics"
-        />
+        <router-link
+          :to="{ path: `/tables/terminals`}"
+          tag="span"
+          exact
+        >
+          <base-material-stats-card
+            color="primary"
+            icon="mdi-wallet"
+            title="Money in terms"
+            :value="mit"
+            :style="{ cursor: 'pointer', font: 'bold' }"
+            sub-icon="mdi-clock"
+            sub-text="Just Updated"
+          />
+        </router-link>
       </v-col>
 
       <v-col
@@ -252,10 +259,10 @@
         <base-material-stats-card
           color="success"
           icon="mdi-cash-plus"
-          title="Today payments"
-          value="179.00 €"
+          title=""
+          value="0.00 €"
           sub-icon="mdi-calendar"
-          sub-text="Last 24 Hours"
+          sub-text="Never"
         />
       </v-col>
 
@@ -275,7 +282,7 @@
         />
       </v-col>
 
-      <!-- <v-col
+      <v-col
         cols="12"
         md="6"
       >
@@ -283,25 +290,25 @@
           color="warning"
           class="px-5 py-3"
         >
-          <template v-slot:heading>
+          <template #heading>
             <div class="display-2 font-weight-light">
-              Employees Stats
+              Invoices
             </div>
 
-            <div class="subtitle-1 font-weight-light">
+            <!-- <div class="subtitle-1 font-weight-light">
               New employees on 15th September, 2016
-            </div>
+            </div> -->
           </template>
           <v-card-text>
             <v-data-table
               :headers="headers"
-              :items="items"
+              :items="invoices"
             />
           </v-card-text>
         </base-material-card>
       </v-col>
 
-      <v-col
+      <!-- <v-col
         cols="12"
         md="6"
       >
@@ -393,6 +400,7 @@
 </template>
 
 <script>
+  import axios from 'axios'
   export default {
     name: 'DashboardDashboard',
     data () {
@@ -439,12 +447,12 @@
             },
           },
         },
-        emailsSubscriptionChart: {
+        invoicesShart: {
           data: {
             labels: ['Ja', 'Fe', 'Ma', 'Ap', 'Mai', 'Ju', 'Jul', 'Au', 'Se', 'Oc', 'No', 'De'],
             series: [
               [542, 443, 320, 780, 553, 453, 326, 434, 568, 610, 756, 895],
-
+              [230, 750, 450, 300, 280, 240, 200, 190],
             ],
           },
           options: {
@@ -471,36 +479,6 @@
             }],
           ],
         },
-        headers: [
-          {
-            sortable: false,
-            text: 'ID',
-            value: 'id',
-          },
-          {
-            sortable: false,
-            text: 'Name',
-            value: 'name',
-          },
-          {
-            sortable: false,
-            text: 'Salary',
-            value: 'salary',
-            align: 'right',
-          },
-          {
-            sortable: false,
-            text: 'Country',
-            value: 'country',
-            align: 'right',
-          },
-          {
-            sortable: false,
-            text: 'City',
-            value: 'city',
-            align: 'right',
-          },
-        ],
         items: [
           {
             id: 1,
@@ -588,15 +566,55 @@
           1: false,
           2: false,
         },
+        invoices: [],
+        mit: '0 €',
       }
     },
-
+    computed: {
+      headers () {
+        return [
+          { text: 'doc_num', align: 'start', value: 'doc_num' },
+          { text: 'amount', align: 'center', value: 'amount', filterable: false },
+          { text: 'provider', align: 'center', value: 'provider', filterable: false },
+        ]
+      },
+    },
+    created () {
+      this.getData()
+    },
     methods: {
       complete (index) {
         this.list[index] = !this.list[index]
       },
       color () {
         this.$vuetify.theme.themes[this.isDark ? 'dark' : 'light'].primary = '#E91E63'
+      },
+      getData: function (app = this) {
+        axios
+          .get('https://admin.montelcompany.me/api/dashboardGetInvByMonth')
+          .then(response => {
+            this.invoicesShart.data = response.data
+            this.invoicesShart.options.high = Math.max(...this.invoicesShart.data.series[0]) + 200
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+        axios
+          .get('https://admin.montelcompany.me/api/getInvoicesList')
+          .then(response => {
+            this.invoices = response.data
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+        axios
+          .get('https://admin.montelcompany.me/api/dashboardGetCacheInterms')
+          .then(response => {
+            this.mit = response.data / 100 + ' €'
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
       },
     },
   }

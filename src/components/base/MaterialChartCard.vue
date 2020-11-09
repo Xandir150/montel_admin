@@ -4,7 +4,7 @@
     v-bind="$attrs"
     v-on="$listeners"
   >
-    <template v-slot:heading>
+    <template #heading>
       <chartist
         :data="data"
         :event-handlers="eventHandlers"
@@ -92,4 +92,14 @@
       .ct-series-a .ct-slice-pie,
       .ct-series-a .ct-area
           fill: rgba(255,255,255,.4)
+
+      .ct-series-b .ct-point,
+      .ct-series-b .ct-line,
+      .ct-series-b .ct-bar,
+      .ct-series-b .ct-slice-donut
+          stroke: rgba(200,255,255,.8)
+
+      .ct-series-b .ct-slice-pie,
+      .ct-series-b .ct-area
+          fill: rgba(200,255,255,.4)
 </style>

@@ -1,6 +1,6 @@
 <template>
   <v-container
-    id="terminals"
+    id="invoiceslist"
     fluid
     tag="section"
   >
@@ -22,8 +22,8 @@
       </template>
     </v-snackbar>
     <base-material-card-table
-      icon="mdi-desktop-classic"
-      title="Terminals"
+      icon="mdi-content-paste"
+      title="Invoices"
       class="px-5 py-3"
       color="primary"
     >
@@ -163,7 +163,7 @@
 <script>
   import axios from 'axios'
   export default {
-    name: 'Terminals',
+    name: 'Invoiceslist',
     data: () => ({
       dates: [new Date().toISOString().substr(0, 10), new Date().toISOString().substr(0, 10)],
       progressBar: true,

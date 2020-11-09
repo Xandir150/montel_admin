@@ -11,7 +11,7 @@
     width="260"
     v-bind="$attrs"
   >
-    <template v-slot:img="props">
+    <template #img="props">
       <v-img
         :gradient="`to bottom, ${barColor}`"
         v-bind="props"
@@ -126,6 +126,11 @@
           icon: 'mdi-cash-multiple',
           to: '/tables/payments/0',
         },
+        // {
+        //   title: 'linvoices',
+        //   icon: 'mdi-content-paste',
+        //   to: '/tables/invoiceslist',
+        // },
         // {
         //   title: 'linvoices',
         //   icon: 'mdi-receipt',
