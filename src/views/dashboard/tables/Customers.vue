@@ -104,6 +104,142 @@
       </v-card>
     </v-dialog>
     <v-dialog
+      v-model="dialogTransBalance"
+      max-width="600"
+      persistent
+    >
+      <v-card>
+        <v-card-title>
+          <span class="headline"> Перенос баланса </span>
+          <v-spacer />
+        </v-card-title>
+        <v-card-text class="pb-6 pt-12 text-center">
+          <v-row>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.name"
+                readonly
+                label="От клиента"
+              />
+            </v-col>
+            <v-col
+              align-self="center"
+              cols="1"
+            >
+              <v-icon>
+                mdi-arrow-right
+              </v-icon>
+            </v-col>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.toName"
+                readonly
+                required
+                label="Для клиента"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.phone"
+                readonly
+                label="С номера"
+              />
+            </v-col>
+            <v-col
+              align-self="center"
+              cols="1"
+            >
+              <v-icon>
+                mdi-arrow-right
+              </v-icon>
+            </v-col>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.toPhone"
+                :rules="rules.number"
+                required
+                autofocus
+                label="На номер"
+                @input="searchToPhone"
+              />
+            </v-col>
+          </v-row>
+          <v-row v-if="editedItem.toName">
+            <v-col>
+              <v-text-field
+                v-model="editedItem.balance"
+                readonly
+                suffix="€"
+              />
+            </v-col>
+            <v-col
+              align-self="center"
+              cols="1"
+            >
+              <v-icon>
+                mdi-minus
+              </v-icon>
+            </v-col>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.toAmount"
+                :rules="rules.digits"
+                required
+                bolt
+                label="Сумма"
+                suffix="€"
+                @input="calcNewBalance"
+              />
+            </v-col>
+            <v-col
+              align-self="center"
+              cols="1"
+            >
+              <v-icon>
+                mdi-arrow-right
+              </v-icon>
+            </v-col>
+            <v-col>
+              <v-text-field
+                v-model="editedItem.toBalance"
+                readonly
+                suffix="€"
+              />
+            </v-col>
+          </v-row>
+          <v-text-field
+            v-if="editedItem.toName"
+            v-model="editedItem.description"
+            :rules="rules.name"
+            required
+            label="Комментарий"
+            counter
+            maxlength="64"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            :disabled="!formTransIsValid"
+            color="success"
+            text
+            @click="transBalanceSend()"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            class="mr-3"
+            text
+            @click="close"
+          >
+            No
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="dialog3"
       max-width="300"
     >
@@ -404,6 +540,20 @@
                       <span>Уменьшить баланс</span>
                     </v-tooltip>
                   </v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-icon
+                          v-bind="attrs"
+                          v-on="on"
+                          @click="transBalance(item)"
+                        >
+                          mdi-cached
+                        </v-icon>
+                      </template>
+                      <span>Перенести на другой номер</span>
+                    </v-tooltip>
+                  </v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
             </template>
@@ -569,6 +719,7 @@
     data: () => ({
       dialogChangeTariff: false,
       dialogChangeBalance: false,
+      dialogTransBalance: false,
       newTariffId: -1,
       dialog3: false,
       progressBar: true,
@@ -592,6 +743,10 @@
         route: 0,
         place: '',
         description: '',
+        toName: '',
+        toPhone: 0,
+        toBalance: 0,
+        toAmount: 0,
       },
       defaultItem: {
         id: 0,
@@ -609,6 +764,7 @@
       rules: {
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
         digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
+        number: [val => Number.isInteger(Number(val)) || 'Должно быть целое число!'],
       },
     }),
 
@@ -630,6 +786,9 @@
       },
       formIsValid () {
         return this.editedItem.place && this.editedItem.description && Number.isInteger(this.editedItem.balance * 100)
+      },
+      formTransIsValid () {
+        return this.editedItem.toPhone && this.editedItem.description && Number.isInteger(this.editedItem.toAmount * 100) && this.editedItem.toName
       },
     },
 
@@ -657,6 +816,30 @@
         })
     },
     methods: {
+      calcNewBalance () {
+        if (Number.isInteger(this.editedItem.toAmount * 100)) {
+          this.editedItem.balance = Math.round(this.editedItem.balance * 100 - this.editedItem.toAmount * 100) / 100
+          this.editedItem.toBalance = Math.round(this.editedItem.toBalance * 100 + this.editedItem.toAmount * 100) / 100
+        }
+      },
+      searchToPhone () {
+        if (this.editedItem.toPhone.startsWith('0')) {
+          this.editedItem.toPhone = this.editedItem.toPhone.substring(1)
+        }
+        if (this.editedItem.toPhone.length === 8) {
+          const customer = this.customers.find(({ phone }) => phone === this.editedItem.toPhone)
+          if (customer === undefined) {
+            this.msgError('Абонент не найден')
+          } else {
+            this.editedItem.toName = customer.name
+            this.editedItem.toBalance = customer.balance
+            this.editedItem.toAmount = 0
+          }
+        } else {
+          this.editedItem.toName = ''
+          this.editedItem.toAmount = 0
+        }
+      },
       getColor (balance) {
         if (balance < 0) return 'red'
         else if (balance > 0) return 'green'
@@ -716,15 +899,18 @@
         this.editedItem.balance = 0
         this.dialogChangeBalance = true
       },
+      transBalance (item) {
+        this.editedIndex = this.customers.indexOf(item)
+        this.editedItem = Object.assign({}, item)
+        this.dialogTransBalance = true
+      },
       setCustomerOption (userId, option, value) {
         axios.post('https://admin.montelcompany.me/api/setCustomerOption', {
           id: userId,
           option: option,
           value: value,
         })
-        this.informColor = 'success'
-        this.informText = 'Option ' + option + ' has ben changed'
-        this.informSnackbar = true
+        this.msgSucess('Option ' + option + ' has ben changed')
       },
       confirmChangeTariff () {
         axios.post('https://admin.montelcompany.me/api/newTariff', {
@@ -734,9 +920,7 @@
         this.dialogChangeTariff = false
         this.newTariffId = -1
         this.editedIndex = -1
-        this.informColor = 'success'
-        this.informText = 'Tariff has ben changed'
-        this.informSnackbar = true
+        this.msgSucess('Tariff has ben changed')
       },
       changeBalance () {
         if (this.editedItem.route === 0) { this.editedItem.balance = this.editedItem.balance * -1 }
@@ -747,10 +931,27 @@
           provider: 'montel',
           description: this.editedItem.description,
         })
-        this.informColor = 'success'
-        this.informText = 'Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance
-        this.informSnackbar = true
+        this.msgSucess('Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance + '€')
         this.customers[this.editedIndex].balance = (this.editedItem.balance * 100 + this.customers[this.editedIndex].balance * 100) / 100
+        this.close()
+      },
+      transBalanceSend () {
+        axios.post('https://admin.montelcompany.me/api/chargeCustom', {
+          number: this.editedItem.phone,
+          place: 'Transfer',
+          amount: this.editedItem.toAmount * -1,
+          provider: 'montel',
+          description: this.editedItem.description,
+        })
+        axios.post('https://admin.montelcompany.me/api/chargeCustom', {
+          number: this.editedItem.toPhone,
+          place: 'Transfer',
+          amount: this.editedItem.toAmount,
+          provider: 'montel',
+          description: this.editedItem.description,
+        })
+        this.msgSucess('Успешно перенесено ' + this.editedItem.toAmount + '€ c ' + this.editedItem.phone + ' на ' + this.editedItem.toPhone)
+        this.customers[this.editedIndex].balance = (this.customers[this.editedIndex].balance * 100 - this.editedItem.toAmount * 100) / 100
         this.close()
       },
       close () {
@@ -758,6 +959,7 @@
         this.dialog3 = false
         this.dialogChangeTariff = false
         this.dialogChangeBalance = false
+        this.dialogTransBalance = false
         this.$nextTick(() => {
           this.deleteItemIndex = -1
           this.editedItem = Object.assign({}, this.defaultItem)
@@ -777,6 +979,16 @@
           this.customers.push(this.editedItem)
         }
         this.close()
+      },
+      msgSuccess (msg) {
+        this.informColor = 'success'
+        this.informText = msg
+        this.informSnackbar = true
+      },
+      msgError (msg) {
+        this.informColor = 'red'
+        this.informText = msg
+        this.informSnackbar = true
       },
       deleteitem () {
         this.customers.splice(this.deleteItemIndex, 1)
