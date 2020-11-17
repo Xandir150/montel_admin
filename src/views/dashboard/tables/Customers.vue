@@ -62,12 +62,21 @@
             label="Номер"
           />
           <v-text-field
+            v-model="editedItem.balance"
+            :rules="rules.digits"
             label="Сумма"
             suffix="€"
           />
+          <v-select
+            v-model="editedItem.place"
+            :items="places"
+            :rules="rules.name"
+            label="Способ оплаты"
+            required
+          />
           <v-text-field
             v-model="editedItem.description"
-            :rules="[rules.required, rules.counter]"
+            :rules="rules.name"
             required
             label="Комментарий"
             counter
@@ -77,9 +86,10 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
+            :disabled="!formIsValid"
             color="success"
             text
-            @click="underConstructionMsg"
+            @click="changeBalance()"
           >
             Yes
           </v-btn>
@@ -164,7 +174,7 @@
           <v-icon class="mr-2">
             mdi-account-group
           </v-icon>
-          All
+          Все
         </v-tab>
         <v-tab
           class="mr-3"
@@ -172,19 +182,19 @@
           <v-icon class="mr-2">
             mdi-account-minus
           </v-icon>
-          Debtors
+          Должники
         </v-tab>
         <v-tab>
           <v-icon class="mr-2">
             mdi-account-plus
           </v-icon>
-          Good
+          Активные
         </v-tab>
         <v-tab>
           <v-icon class="mr-2">
             mdi-account-star
           </v-icon>
-          New
+          Новые
         </v-tab>
       </v-tabs>
 
@@ -580,6 +590,7 @@
         email: 0,
         phone: 0,
         route: 0,
+        place: '',
         description: '',
       },
       defaultItem: {
@@ -590,11 +601,14 @@
         phone: 0,
         status: 0,
         balance: 0.00,
+        place: '',
+        description: '',
       },
       tabs: 0,
+      places: ['Терминал', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
       rules: {
-        required: value => !!value || 'Required.',
-        counter: value => value.length <= 64 || 'Max 64 characters',
+        name: [val => (val || '').length > 0 || 'Это обязательное поле'],
+        digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
       },
     }),
 
@@ -607,12 +621,15 @@
       },
       headers () {
         return [
-          { text: 'Name', align: 'start', value: 'name' },
-          { text: 'Contact', align: 'center', value: 'phone', width: 10, visible: false },
-          { text: 'Online', align: 'center', value: 'switch', width: 10, sortable: false, filterable: false },
-          { text: 'Balance', align: 'center', value: 'balance', width: 10, filter: this.balanceFilter },
+          { text: 'Имя', align: 'start', value: 'name' },
+          { text: 'Контакт', align: 'center', value: 'phone', width: 10, visible: false },
+          { text: 'Статус', align: 'center', value: 'switch', width: 10, sortable: false, filterable: false },
+          { text: 'Баланс', align: 'center', value: 'balance', width: 10, filter: this.balanceFilter },
           { value: 'charge', align: 'start', width: 10, sortable: false, filterable: false },
         ]
+      },
+      formIsValid () {
+        return this.editedItem.place && this.editedItem.description && Number.isInteger(this.editedItem.balance * 100)
       },
     },
 
@@ -693,8 +710,10 @@
         this.dialogChangeTariff = true
       },
       setBalance (item, route) {
+        this.editedIndex = this.customers.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.editedItem.route = route
+        this.editedItem.balance = 0
         this.dialogChangeBalance = true
       },
       setCustomerOption (userId, option, value) {
@@ -718,6 +737,21 @@
         this.informColor = 'success'
         this.informText = 'Tariff has ben changed'
         this.informSnackbar = true
+      },
+      changeBalance () {
+        if (this.editedItem.route === 0) { this.editedItem.balance = this.editedItem.balance * -1 }
+        axios.post('https://admin.montelcompany.me/api/chargeCustom', {
+          number: this.editedItem.phone,
+          place: this.editedItem.place,
+          amount: this.editedItem.balance,
+          provider: 'montel',
+          description: this.editedItem.description,
+        })
+        this.informColor = 'success'
+        this.informText = 'Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance
+        this.informSnackbar = true
+        this.customers[this.editedIndex].balance = (this.editedItem.balance * 100 + this.customers[this.editedIndex].balance * 100) / 100
+        this.close()
       },
       close () {
         this.dialog = false

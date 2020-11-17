@@ -4,6 +4,68 @@
     fluid
     tag="section"
   >
+    <v-dialog
+      v-model="dialogChangeBalance"
+      max-width="350"
+    >
+      <v-card>
+        <v-card-title>
+          <span class="headline"> {{ formTitleChangeBalance }} баланса </span>
+          <v-spacer />
+        </v-card-title>
+        <v-card-text class="pb-6 pt-12 text-center">
+          <v-text-field
+            v-model="editedItem.name"
+            readonly
+            label="Клиенту"
+          />
+          <v-text-field
+            v-model="editedItem.phone"
+            readonly
+            label="Номер"
+          />
+          <v-text-field
+            v-model="editedItem.balance"
+            :rules="rules.digits"
+            label="Сумма"
+            suffix="€"
+          />
+          <v-select
+            v-model="editedItem.place"
+            :items="places"
+            :rules="rules.name"
+            label="Способ оплаты"
+            required
+          />
+          <v-text-field
+            v-model="editedItem.description"
+            :rules="rules.name"
+            required
+            label="Комментарий"
+            counter
+            maxlength="64"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            :disabled="!formIsValid"
+            color="success"
+            text
+            @click="changeBalance()"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            class="mr-3"
+            text
+            @click="close"
+          >
+            No
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-snackbar
       v-model="informSnackbar"
       :color="informColor"
@@ -70,7 +132,7 @@
             </div>
 
             <div class="subtitle-1 font-weight-light">
-              From {{ customer.city }}
+              из города {{ customer.city }}
             </div>
           </template>
 
@@ -84,7 +146,7 @@
                   <v-text-field
                     v-model="customer.name"
                     :prepend-icon="icon"
-                    label="User Name"
+                    label="Имя клиента"
                     @click:prepend="changeIcon"
                   />
                 </v-col>
@@ -96,7 +158,7 @@
                   <v-text-field
                     v-model="customer.city"
                     prepend-icon="mdi-home-city"
-                    label="City"
+                    label="Город"
                   />
                 </v-col>
 
@@ -136,7 +198,7 @@
                 <v-col cols="12">
                   <v-text-field
                     disabled
-                    label="Adress"
+                    label="Адрес"
                     class="purple-input"
                   />
                 </v-col>
@@ -144,7 +206,7 @@
                   <v-textarea
                     v-model="customer.description"
                     class="purple-input"
-                    label="About User"
+                    label="Примечания"
                     value=""
                   />
                 </v-col>
@@ -158,7 +220,7 @@
                     class="mr-0"
                     @click="updateProile"
                   >
-                    Update Profile
+                    Обновить профиль
                   </v-btn>
                 </v-col>
               </v-row>
@@ -179,13 +241,13 @@
         >
           <v-card-text class="text-center">
             <h6 class="display-1 mb-1 grey--text">
-              Client from {{ customer.created }}
+              Клиент с {{ customer.created }}
             </h6>
             <h6 class="display-1 mb-1 grey--text">
-              Last payment {{ getDateTime(customer.lastpaydate) }}
+              Последний платеж {{ getDateTime(customer.lastpaydate) }}
             </h6>
             <h4 class="display-2 font-weight-light mb-3 black--text">
-              Balance {{ customer.balance }} €
+              Баланс {{ customer.balance }} €
             </h4>
             <v-select
               v-model="customer.tariff"
@@ -223,15 +285,17 @@
                 class="ma-2"
                 small
                 color="primary"
+                @click="setBalance(1)"
               >
-                Add
+                Оплата
               </v-btn>
               <v-btn
                 class="ma-2"
                 small
                 color="primary"
+                @click="setBalance(0)"
               >
-                Sub
+                Расход
               </v-btn>
             </div>
             <!-- <p class="font-weight-light grey--text">
@@ -263,6 +327,32 @@
       },
     },
     data: () => ({
+      dialogChangeBalance: false,
+      editedItem: {
+        name: '',
+        balance: 0,
+        email: 0,
+        phone: 0,
+        route: 0,
+        place: '',
+        description: '',
+      },
+      defaultItem: {
+        id: 0,
+        credit: 0,
+        name: '',
+        email: '',
+        phone: 0,
+        status: 0,
+        balance: 0.00,
+        place: '',
+        description: '',
+      },
+      places: ['Терминал', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
+      rules: {
+        name: [val => (val || '').length > 0 || 'Это обязательное поле'],
+        digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
+      },
       informSnackbar: false,
       timeout: 3000,
       informColor: 'warning',
@@ -271,7 +361,7 @@
       newTariffId: 0,
       customer: { },
       tariffs: [],
-      status: [{ color: 'red', text: 'Disabled' }, { color: 'success', text: 'Active' }],
+      status: [{ color: 'red', text: 'Отключен' }, { color: 'success', text: 'Активный' }],
       iconIndex: 0,
       icons: [
         'mdi-emoticon',
@@ -285,6 +375,12 @@
       ],
     }),
     computed: {
+      formTitleChangeBalance () {
+        return this.editedItem.route === 0 ? 'Уменьшение' : 'Добавление'
+      },
+      formIsValid () {
+        return this.editedItem.place && this.editedItem.description && Number.isInteger(this.editedItem.balance * 100)
+      },
       getStatus () {
         if (this.customer > 0) {
           return 'Active'
@@ -394,10 +490,34 @@
         datetime = new Date(new Date(datetime) - this.getTimeOffset() * 60 * 1000)
         return new Date(datetime).toLocaleString()
       },
+      setBalance (route) {
+        this.editedItem.phone = this.customer.phone
+        this.editedItem.name = this.customer.name
+        this.editedItem.route = route
+        this.editedItem.balance = 0
+        this.dialogChangeBalance = true
+      },
+      changeBalance () {
+        if (this.editedItem.route === 0) { this.editedItem.balance = this.editedItem.balance * -1 }
+        axios.post('https://admin.montelcompany.me/api/chargeCustom', {
+          number: this.editedItem.phone,
+          place: this.editedItem.place,
+          amount: this.editedItem.balance,
+          provider: 'montel',
+          description: this.editedItem.description,
+        })
+        this.informColor = 'success'
+        this.informText = 'Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance
+        this.informSnackbar = true
+        this.this.customer.balance = (this.editedItem.balance * 100 + this.this.customer.balance * 100) / 100
+        this.close()
+      },
       close () {
         this.dialogChangeTariff = false
+        this.dialogChangeBalance = false
         this.$nextTick(() => {
           this.newTariffId = -1
+          this.editedItem = Object.assign({}, this.defaultItem)
         })
       },
     },

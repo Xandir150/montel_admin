@@ -13,7 +13,8 @@
     "now-start": "vue-cli-service serve"
   },
   "dependencies": {
-    "core-js": "^3.6.5",
+    "core-js": "^3.7.0",
+    "vee-validate": "^3.4.5",
     "vue": "^2.6.12",
     "vue-i18n": "^8.21.1",
     "vue-router": "^3.4.5",
@@ -37,7 +38,6 @@
     "eslint-plugin-vue": "^7.0.0",
     "sass": "^1.26.11",
     "sass-loader": "^10.0.2",
-    "vee-validate": "^3.4.0",
     "vue-chartist": "^2.3.1",
     "vue-cli-plugin-axios": "0.0.4",
     "vue-cli-plugin-i18n": "^1.0.1",

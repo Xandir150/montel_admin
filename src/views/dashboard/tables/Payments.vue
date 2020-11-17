@@ -23,7 +23,7 @@
     </v-snackbar>
     <base-material-card-table
       icon="mdi-cash-multiple"
-      :title="`Payments ${getTitle}`"
+      :title="`Рассчёты ${getTitle}`"
       class="px-5 py-3"
       color="primary"
     >
@@ -55,7 +55,7 @@
             <v-text-field
               v-model="search"
               append-icon="mdi-magnify"
-              label="Search"
+              label="Поиск"
               single-line
               hide-details
             />
@@ -113,7 +113,7 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  Upload Invoice
+                  Загрузить счёт
                 </v-btn>
               </template>
               <v-card>
@@ -164,6 +164,14 @@
             </v-list-item-content>
           </v-list-item>
         </template> -->
+        <template #[`item.name`]="{ item }">
+          <p>
+            {{ item.name }}
+          </p>
+          <p>
+            {{ getDateTime(item.datetime) }}
+          </p>
+        </template>
         <template #[`item.debt`]="{ item }">
           <p class="font-weight-bold">
             {{ item.debt }}
@@ -348,10 +356,13 @@
                     <thead>
                       <tr>
                         <th class="text-center">
-                          Terminal
+                          Место оплаты
                         </th>
                         <th class="text-center">
-                          Date time
+                          Дата время
+                        </th>
+                        <th class="text-center">
+                          Комментарий
                         </th>
                       </tr>
                     </thead>
@@ -362,6 +373,9 @@
                         </td>
                         <td class="text-center">
                           {{ getDateTime(item.datetime) }}
+                        </td>
+                        <td class="text-center">
+                          {{ item.pdesc }}
                         </td>
                       </tr>
                     </tbody>
@@ -407,12 +421,12 @@
       },
       headers () {
         return [
-          { text: 'Name', align: 'start', sortable: false, value: 'name' },
-          { text: 'Contact', value: 'phone', sortable: false },
+          { text: 'Имя', align: 'start', sortable: false, value: 'name' },
+          { text: 'Контакт', value: 'phone', sortable: false },
           // { text: 'Place', align: 'center', value: 'place', sortable: false, width: 120 },
-          { text: 'Debt', align: 'center', value: 'debt', width: 80, filterable: false },
-          { text: 'Credit', align: 'center', value: 'ccredit', width: 90, filterable: false },
-          { text: 'Balance', align: 'center', value: 'balance', width: 10, sortable: false, filter: this.balanceFilter },
+          { text: 'Дебет', align: 'center', value: 'debt', width: 100, filterable: false },
+          { text: 'Кредит', align: 'center', value: 'ccredit', width: 100, filterable: false },
+          { text: 'Баланс', align: 'center', value: 'balance', width: 10, sortable: false, filter: this.balanceFilter },
           { value: 'info', width: 10, sortable: false, filterable: false },
         ]
       },
@@ -423,7 +437,7 @@
         if (this.customerid > 0) {
           if (this.bills.length > 0) return this.bills[0].name
           else return this.customerid
-        } else return 'all'
+        } else return 'все'
       },
     },
 
