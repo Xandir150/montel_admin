@@ -303,46 +303,46 @@
                           {{ item.details.service }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.amount) }}
+                          {{ addPdv(item.details.amount) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.calls_local) }}
+                          {{ addPdv(item.details.calls_local) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.calls_other) }}
+                          {{ addPdv(item.details.calls_other) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.calls_landline) }}
+                          {{ addPdv(item.details.calls_landline) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.sms_national) }}
+                          {{ addPdv(item.details.sms_national) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.sms_international) }}
+                          {{ addPdv(item.details.sms_international) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.gprs) }}
+                          {{ addPdv(item.details.gprs) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.calls_special) }}
+                          {{ addPdv(item.details.calls_special) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.call_international) }}
+                          {{ addPdv(item.details.call_international) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.roaming) }}
+                          {{ addPdv(item.details.roaming) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.mms) }}
+                          {{ addPdv(item.details.mms) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.addational_service) }}
+                          {{ addPdv(item.details.addational_service) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.over_limit) }}
+                          {{ addPdv(item.details.over_limit) }}
                         </td>
                         <td class="text-center">
-                          {{ parseFloat(item.details.discount) }}
+                          {{ addPdv(item.details.discount) }}
                         </td>
                       </tr>
                     </tbody>
@@ -455,6 +455,9 @@
     },
 
     methods: {
+      addPdv (val) {
+        return Math.round(parseFloat(val) * 1.21, 4)
+      },
       getColor (balance) {
         if (balance < 0) return 'red'
         else if (balance > 0) return 'green'

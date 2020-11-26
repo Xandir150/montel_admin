@@ -162,7 +162,7 @@
                 required
                 autofocus
                 label="На номер"
-                @input="searchToPhone"
+                @input="searchByPhone"
               />
             </v-col>
           </v-row>
@@ -822,7 +822,7 @@
           this.editedItem.toBalance = Math.round(this.editedItem.toBalance * 100 + this.editedItem.toAmount * 100) / 100
         }
       },
-      searchToPhone () {
+      searchByPhone () {
         if (this.editedItem.toPhone.startsWith('0')) {
           this.editedItem.toPhone = this.editedItem.toPhone.substring(1)
         }
