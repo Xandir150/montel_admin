@@ -102,68 +102,8 @@
             </v-menu>
             <!-- date -->
             <v-spacer />
-            <v-dialog
-              v-model="dialog"
-              max-width="500px"
-            >
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  color="primary"
-                  dark
-                  v-bind="attrs"
-                  v-on="on"
-                >
-                  Загрузить счёт
-                </v-btn>
-              </template>
-              <v-card>
-                <v-card-title>
-                  <span class="headline">Загрузка счёта оператора M:TEL</span>
-                </v-card-title>
-                <v-card-text>
-                  <v-container>
-                    <v-row>
-                      <v-file-input
-                        v-model="files"
-                        placeholder="Выберите файл"
-                        truncate-length="50"
-                        accept=".xlsx"
-                        label="Файл счёта для загрузки"
-                        prepend-icon="mdi-microsoft-excel"
-                      />
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-spacer />
-                  <v-btn
-                    color="blue darken-1"
-                    text
-                    @click="close"
-                  >
-                    Отмена
-                  </v-btn>
-                  <v-btn
-                    color="blue darken-1"
-                    text
-                    @click="submitFiles"
-                  >
-                    GO!
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-dialog>
           </v-toolbar>
         </template>
-        <!-- <template #[`item.place`]="{ item }">
-          <v-list-item two-line>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.place }}</v-list-item-title>
-              <v-list-item-subtitle>{{ getDateTime(item.datetime) }}</v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </template> -->
         <template #[`item.name`]="{ item }">
           <p>
             {{ item.name }}
@@ -411,7 +351,6 @@
       search: '',
       bills: [],
       expanded: [],
-      files: [],
       singleExpand: true,
     }),
 
@@ -510,45 +449,7 @@
             console.log(error)
           })
       },
-      submitFiles () {
-        if (this.files) {
-          const formData = new FormData()
-          formData.append('files', this.files, this.files.name)
-          // files
-          // for (const file of this.files) {
-          //   formData.append('files', file, file.name)
-          //   console.log(file.name)
-          // }
-          // // additional data
-          // formData.append('test', 'foo bar')
-          // this.dialog = false
-          axios
-            .post('https://admin.montelcompany.me/api/uploadInvoice', formData)
-            .then(response => {
-              if (response.status === 200) {
-                this.close()
-                this.informColor = 'success'
-                this.informText = 'Успешно загружено ' + response.data + ' строк.'
-                this.informSnackbar = true
-              }
-            })
-            .catch(error => {
-              this.dialog = false
-              this.informColor = 'error'
-              this.informText = error
-              this.informSnackbar = true
-              console.log({ error })
-            })
-        } else {
-          console.log('there are no files.')
-          this.dialog = false
-          this.informColor = 'error'
-          this.informText = 'there are no files.'
-          this.informSnackbar = true
-        }
-      },
       close () {
-        this.files = null
         this.dialog = false
       },
     },

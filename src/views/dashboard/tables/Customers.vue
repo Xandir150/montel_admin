@@ -473,15 +473,17 @@
                       :style="{ cursor: 'pointer'}"
                     > -->
                     <router-link
+                      v-slot="{ navigate }"
                       :to="{ path: `/tables/payments/${item.phone}`}"
                       tag="span"
-                      exact
+                      custom
                     >
                       <v-chip
                         :color="getColor(item.balance)"
                         dark
                         label
                         :style="{ cursor: 'pointer', font: 'bold' }"
+                        @click="navigate"
                       >
                         {{ item.balance }} €
                       </v-chip>

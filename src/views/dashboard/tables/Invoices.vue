@@ -5,42 +5,42 @@
     tag="section"
   >
     <v-snackbar
-      v-model="underconstuction"
-      color="warning"
+      v-model="informSnackbar"
+      :color="informColor"
       :timeout="timeout"
     >
-      UNDER CONSTRUCTION
+      {{ informText }}
 
       <template #action="{ attrs }">
         <v-btn
-          color="blue"
           text
           v-bind="attrs"
-          @click="underconstuction = false"
+          @click="informSnackbar = false"
         >
           Close
         </v-btn>
       </template>
     </v-snackbar>
     <base-material-card-table
-      icon="mdi-cash-multiple"
-      :title="`Invoces ${getTitle}`"
+      icon="mdi-receipt"
+      :title="`Счета ${getTitle}`"
       class="px-5 py-3"
       color="primary"
     >
       <v-data-table
         loading
         :headers="headers"
-        :items="invoices"
+        :items="bills"
         sort-by="datetime"
         sort-desc
         class="elevation-1"
         :search="search"
         :expanded="expanded"
         :single-expand="singleExpand"
+        show-expand
         item-key="row_num"
         calculate-widths
-        show-expand
+        @item-expanded="loadDetails"
       >
         <v-progress-linear
           v-show="progressBar"
@@ -55,13 +55,13 @@
             <v-text-field
               v-model="search"
               append-icon="mdi-magnify"
-              label="Search"
+              label="Поиск"
               single-line
               hide-details
             />
             <v-spacer />
             <!-- date -->
-            <v-menu
+            <!-- <v-menu
               ref="menu"
               v-model="menu"
               :close-on-content-click="false"
@@ -99,97 +99,210 @@
                   OK
                 </v-btn>
               </v-date-picker>
-            </v-menu>
+            </v-menu> -->
             <!-- date -->
+            <v-spacer />
+            <v-dialog
+              v-model="dialog"
+              max-width="500px"
+            >
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  color="primary"
+                  dark
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  Загрузить счёт
+                </v-btn>
+              </template>
+              <v-card>
+                <v-card-title>
+                  <span class="headline">Загрузка счёта оператора M:TEL</span>
+                </v-card-title>
+                <v-card-text>
+                  <v-container>
+                    <v-row>
+                      <v-file-input
+                        v-model="files"
+                        placeholder="Выберите файл"
+                        truncate-length="50"
+                        accept=".xlsx"
+                        label="Файл счёта для загрузки"
+                        prepend-icon="mdi-microsoft-excel"
+                      />
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn
+                    color="blue darken-1"
+                    text
+                    @click="close"
+                  >
+                    Отмена
+                  </v-btn>
+                  <v-btn
+                    color="blue darken-1"
+                    text
+                    @click="submitFiles"
+                  >
+                    GO!
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-toolbar>
         </template>
         <template #[`item.amount`]="{ item }">
-          <p class="font-weight-bold">
-            {{ parseFloat(item.amount) }} €
-          </p>
+          {{ Math.round(parseFloat(item.amount) * 100) / 100 }}
         </template>
+        <template #[`item.discount`]="{ item }">
+          {{ Math.round(parseFloat(item.discount) * 100) / 100 }}
+        </template>
+        <v-btn
+          color="primary"
+          @click="getData"
+        >
+          Reset
+        </v-btn>
         <template #expanded-item="{ item }">
           <td :colspan="headers.length">
             <v-container>
               <v-row no-gutters>
-                <v-simple-table dense>
+                <v-simple-table
+                  dense
+                >
                   <template #default>
                     <thead>
                       <tr>
-                        <th class="text-left">
-                          calls_local
+                        <th class="text-center">
+                          Number
                         </th>
-                        <th class="text-left">
-                          calls_other
+                        <th class="text-center">
+                          MG
                         </th>
-                        <th class="text-left">
-                          calls_landline
+                        <th class="text-center">
+                          Call 68
                         </th>
-                        <th class="text-left">
-                          sms_national
+                        <th class="text-center">
+                          Call CG
                         </th>
-                        <th class="text-left">
-                          sms_international
+                        <th class="text-center">
+                          Call Fix
                         </th>
-                        <th class="text-left">
-                          gprs
+                        <th class="text-center">
+                          SMS CG
                         </th>
-                        <th class="text-left">
-                          calls_special
+                        <th class="text-center">
+                          SMS abroad
                         </th>
-                        <th class="text-left">
-                          call_international
+                        <th class="text-center">
+                          GPRS
                         </th>
-                        <th class="text-left">
-                          roaming
+                        <th class="text-center">
+                          Call spec
                         </th>
-                        <th class="text-left">
-                          addational_service
+                        <th class="text-center">
+                          Call abroad
                         </th>
-                        <th class="text-left">
-                          mms
+                        <th class="text-center">
+                          Roaming
                         </th>
-                        <th class="text-left">
-                          over_limit
+                        <th class="text-center">
+                          Services
                         </th>
-                        <th class="text-left">
-                          discount
+                        <th class="text-center">
+                          MMS
+                        </th>
+                        <th class="text-center">
+                          Over limit
+                        </th>
+                        <th class="text-center">
+                          Discount
+                        </th>
+                        <th class="text-center">
+                          Balance
+                        </th>
+                        <th class="text-center">
+                          Total
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>{{ parseFloat(item.calls_local) }}</td>
-                        <td>{{ parseFloat(item.calls_other) }}</td>
-                        <td>{{ parseFloat(item.calls_landline) }}</td>
-                        <td>{{ parseFloat(item.sms_national) }}</td>
-                        <td>{{ parseFloat(item.sms_international) }}</td>
-                        <td>{{ parseFloat(item.gprs) }}</td>
-                        <td>{{ parseFloat(item.calls_special) }}</td>
-                        <td>{{ parseFloat(item.call_international) }}</td>
-                        <td>{{ parseFloat(item.roaming) }}</td>
-                        <td>{{ parseFloat(item.mms) }}</td>
-                        <td>{{ parseFloat(item.over_limit) }}</td>
-                        <td>{{ parseFloat(item.discount) }}</td>
+                      <tr
+                        v-for="row in item.details"
+                        :key="row.name"
+                      >
+                        <td class="text-center">
+                          <router-link
+                            v-slot="{ navigate }"
+                            :to="{ path: `/tables/payments/${row.number}`}"
+                            tag="span"
+                            custom
+                          >
+                            <span
+                              role="link"
+                              :style="{ cursor: 'pointer', font: 'bold' }"
+                              @click="navigate"
+                              @keypress.enter="navigate"
+                            > {{ row.number }}</span>
+                          </router-link>
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.amount) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.calls_local) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.calls_other) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.calls_landline) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.sms_national) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.sms_international) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.gprs) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.calls_special) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.call_international) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.roaming) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.mms) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.addational_service) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.over_limit) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.discount) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.cb) * 100) / 100 }}
+                        </td>
+                        <td class="text-center">
+                          {{ Math.round(parseFloat(row.tAmount) * 100) / 100 }}
+                        </td>
                       </tr>
                     </tbody>
                   </template>
                 </v-simple-table>
-                <!-- <v-col order="last">
-                  <v-data-table
-                    dense
-                    :headers="paymentHeaders"
-                    :items="item.payments"
-                    item-key="name"
-                    class="elevation-1"
-                  >
-                    <template #[`item.amount`]="{ item }">
-                      <p :style="{ color: getCollectColor(item.number)}">
-                        {{ item.amount/100 }} €
-                      </p>
-                    </template>
-                  </v-data-table>
-                </v-col> -->
               </v-row>
             </v-container>
           </td>
@@ -201,22 +314,26 @@
 <script>
   import axios from 'axios'
   export default {
-    name: 'Payments',
+    name: 'Invoices',
     props: {
       invoiceid: {
         type: String,
-        required: false,
+        required: true,
       },
     },
     data: () => ({
       dates: [new Date().toISOString().substr(0, 10), new Date().toISOString().substr(0, 10)],
       menu: false,
+      dialog: false,
       progressBar: true,
-      underconstuction: false,
+      informSnackbar: false,
       timeout: 3000,
+      informColor: 'warning',
+      informText: 'UNDER CONSTRUCTION',
       search: '',
-      invoices: [],
+      bills: [],
       expanded: [],
+      files: [],
       singleExpand: true,
     }),
 
@@ -226,10 +343,15 @@
       },
       headers () {
         return [
-          { text: 'Num', align: 'start', value: 'doc_num' },
-          { text: 'Amount', value: 'amount' },
-          { text: 'Number', value: 'number' },
-          { text: 'provider', value: 'provider' },
+          { text: 'Дата', align: 'start', width: 120, sortable: false, value: 'date' },
+          { text: 'Номер', value: 'doc_num', sortable: false },
+          { text: 'Провайдер', value: 'provider', sortable: false },
+          { text: 'Абонплата', value: 'amount', width: 120, filterable: false },
+          { text: 'Расходы', value: 'overfee', width: 120, filterable: false },
+          { text: 'Скидка', value: 'discount', width: 120, sortable: false, filterable: false },
+          { text: 'С клиентов', value: 'tamount', width: 120, sortable: false, filterable: false },
+          { text: 'Балансы клиентов', value: 'client_balances', sortable: false, filterable: false },
+          { text: 'Профит', value: 'revenue', sortable: false, filterable: false },
         ]
       },
       dateRangeText () {
@@ -239,51 +361,27 @@
         if (this.invoiceid > 0) {
           if (this.bills.length > 0) return this.bills[0].name
           else return this.invoiceid
-        } else return 'all'
+        } else return 'все'
       },
     },
 
     watch: {
-      invoices () {
+      bills () {
         this.progressBar = false
       },
+      dialog (val) {
+        val || this.close()
+      },
     },
-    // mounted () {
-    //   axios
-    //     .get('https://admin.montelcompany.me/api/invoices')
-    //     .then(function (response) {
-    //       this.invoices = response.data
-    //     })
-    //     .catch(function (error) {
-    //       console.log(error)
-    //     })
-    // },
-    mounted () {
-      axios.get('https://admin.montelcompany.me/api/invoices')
-        .then(response => {
-          this.invoices = response.data.map((item) => {
-            return {
-              details: {
-                calls_local: item.calls_local,
-                calls_other: item.calls_other,
-                calls_landline: item.calls_landline,
-                sms_national: item.sms_national,
-                sms_international: item.sms_international,
-                gprs: item.gprs,
-                calls_special: item.calls_special,
-                call_international: item.call_international,
-                roaming: item.roaming,
-                addational_service: item.addational_service,
-                mms: item.mms,
-                over_limit: item.over_limit,
-                discount: item.discount,
-              },
-              ...item,
-            }
-          })
-        })
+
+    created () {
+      this.getData()
     },
+
     methods: {
+      addPdv (val) {
+        return Math.round(parseFloat(val) * 1.21 * 10000) / 10000
+      },
       getColor (balance) {
         if (balance < 0) return 'red'
         else if (balance > 0) return 'green'
@@ -292,6 +390,92 @@
       getDateTime (datetime) {
         datetime = new Date(new Date(datetime) - this.getTimeOffset() * 60 * 1000)
         return new Date(datetime).toLocaleString()
+      },
+      getData: function (app = this) {
+        // s когда бдем получать конкретный счёт или по фильтру
+        if (this.invoiceid > 0) {
+          axios
+            .get('https://admin.montelcompany.me/api/getBills?number=' + this.invoiceid)
+            .then(response => {
+              this.bills = response.data.map((item) => {
+                return {
+                  details: [],
+                  ...item,
+                }
+              })
+            })
+            .catch(function (error) {
+              console.log(error)
+            })
+        } else {
+          // s
+          axios
+            .get('https://admin.montelcompany.me/api/getInvoicesList')
+            .then(response => {
+              this.bills = response.data.map((item) => {
+                return {
+                  details: [],
+                  ...item,
+                }
+              })
+            })
+            .catch(function (error) {
+              console.log(error)
+            })
+        }
+      },
+      loadDetails ({ item }) {
+        axios.get('https://admin.montelcompany.me/api/invoices?&doc=' + item.doc_num + '&service=bill')
+          .then(response => {
+            item.details = response.data
+          })
+          .catch(function (error) {
+            this.informColor = 'error'
+            this.informText = error
+            this.informSnackbar = true
+            console.log(error)
+          })
+      },
+      submitFiles () {
+        if (this.files) {
+          const formData = new FormData()
+          formData.append('files', this.files, this.files.name)
+          // files
+          // for (const file of this.files) {
+          //   formData.append('files', file, file.name)
+          //   console.log(file.name)
+          // }
+          // // additional data
+          // formData.append('test', 'foo bar')
+          // this.dialog = false
+          axios
+            .post('https://admin.montelcompany.me/api/uploadInvoice', formData)
+            .then(response => {
+              if (response.status === 200) {
+                this.close()
+                this.informColor = 'success'
+                this.informText = 'Успешно загружено ' + response.data + ' строк.'
+                this.informSnackbar = true
+              }
+            })
+            .catch(error => {
+              this.dialog = false
+              this.informColor = 'error'
+              this.informText = error
+              this.informSnackbar = true
+              console.log({ error })
+            })
+        } else {
+          console.log('there are no files.')
+          this.dialog = false
+          this.informColor = 'error'
+          this.informText = 'there are no files.'
+          this.informSnackbar = true
+        }
+      },
+      close () {
+        this.files = null
+        this.dialog = false
       },
     },
   }

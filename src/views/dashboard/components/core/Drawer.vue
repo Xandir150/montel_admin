@@ -131,11 +131,11 @@
         //   icon: 'mdi-content-paste',
         //   to: '/tables/invoiceslist',
         // },
-        // {
-        //   title: 'linvoices',
-        //   icon: 'mdi-receipt',
-        //   to: '/tables/invoices/0',
-        // },
+        {
+          title: 'linvoices',
+          icon: 'mdi-receipt',
+          to: '/tables/invoices/0',
+        },
         {
           title: 'lterminals',
           icon: 'mdi-desktop-classic',

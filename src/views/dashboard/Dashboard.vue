@@ -242,11 +242,11 @@
           <base-material-stats-card
             color="primary"
             icon="mdi-wallet"
-            title="Money in terms"
+            title="В терминалах"
             :value="mit"
             :style="{ cursor: 'pointer', font: 'bold' }"
             sub-icon="mdi-clock"
-            sub-text="Just Updated"
+            sub-text="Обновлено сейчас"
           />
         </router-link>
       </v-col>
@@ -292,18 +292,24 @@
         >
           <template #heading>
             <div class="display-2 font-weight-light">
-              Invoices
+              Счета
             </div>
 
-            <!-- <div class="subtitle-1 font-weight-light">
-              New employees on 15th September, 2016
-            </div> -->
+            <div class="subtitle-1 font-weight-light">
+              Последние счета операторов
+            </div>
           </template>
           <v-card-text>
             <v-data-table
               :headers="headers"
               :items="invoices"
-            />
+            >
+              <template #[`item.csumm`]="{ item }">
+                <p class="font-weight-bold">
+                  {{ Math.round((parseFloat(item.amount) + parseFloat(item.overfee) - parseFloat(item.discount)) * 100) / 100 }}
+                </p>
+              </template>
+            </v-data-table>
           </v-card-text>
         </base-material-card>
       </v-col>
@@ -573,9 +579,11 @@
     computed: {
       headers () {
         return [
-          { text: 'doc_num', align: 'start', value: 'doc_num' },
-          { text: 'amount', align: 'center', value: 'amount', filterable: false },
-          { text: 'provider', align: 'center', value: 'provider', filterable: false },
+          { text: 'Дата', align: 'center', value: 'date', filterable: false },
+          { text: 'Повайдер', align: 'center', value: 'provider', filterable: false },
+          { text: 'Номер', align: 'start', value: 'doc_num' },
+          { text: 'Сумма', align: 'center', value: 'csumm', filterable: false },
+          { text: 'С клиентов', align: 'center', value: 'tamount', filterable: false },
         ]
       },
     },

@@ -51,10 +51,16 @@ export default new Router({
           path: 'tables/customers',
           component: () => import('@/views/dashboard/tables/Customers'),
         },
+        // {
+        //   name: 'Invoices',
+        //   path: 'tables/invoiceslist',
+        //   component: () => import('@/views/dashboard/tables/InvoicesList'),
+        // },
         {
           name: 'Invoices',
-          path: 'tables/invoiceslist',
-          component: () => import('@/views/dashboard/tables/InvoicesList'),
+          path: 'tables/invoices/:invoiceid',
+          props: true,
+          component: () => import('@/views/dashboard/tables/Invoices'),
         },
         {
           name: 'Terminals',
