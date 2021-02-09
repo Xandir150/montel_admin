@@ -53,7 +53,7 @@ Flight::route('POST|OPTIONS /uploadInvoice', function(){
 			$db->query($sql);
 			//$db->query("TRUNCATE TABLE adminweb.bills_blackhole;");
 		}
-		echo count($rows);
+		echo count($rows); //чушь. переделать.
 	} else {
 		echo SimpleXLSX::parseError();
 	}
@@ -131,7 +131,14 @@ Flight::route('GET /getBills', function () {
 Flight::route('GET /getInvoicesList', function () {
 	$number = Flight::request()->query->number;
 	$db = Flight::db();
-	$sql = "select doc_num, sum(tAmount) as amount, provider from adminweb.bills where service = 'bill' group by doc_num, provider";
+	$sql = "select @row_num:= @row_num + 1 as row_num, DATE(datetime) as date,doc_num,sum(amount) as amount, provider, sum(discount) as discount,
+			sum(cb) as client_balances,
+			sum(OverFee) as overfee,
+			sum(OverFeeTRate) as overfeetrate,
+			sum(tAmount) as tamount,
+			sum(revenue) as revenue
+			from bills, (SELECT @row_num:= 0 AS num) as r
+			GROUP by doc_num, provider,DATE(datetime)";
 			try {
 		$result = $db->query($sql);
 		echo '[';
@@ -147,8 +154,12 @@ Flight::route('GET /invoices', function () {
 	$number = Flight::request()->query->number;
 	$doc_num = Flight::request()->query->doc;
 	$service = Flight::request()->query->service;
+	$where = false;
+	if(isset($number) || isset($doc_num) || isset($service)){
+		$where = true;
+	}
 	$sql = "select @row_num:= @row_num + 1 as row_num, bills.* from adminweb.bills, 
-			(SELECT @row_num:= 0 AS num) as r ".($number?" where number=$number":'').($doc_num?" and doc_num='$doc_num'":'').($service?" and service='$service'":'');
+			(SELECT @row_num:= 0 AS num) as r ".($where?" where ":'')."1=1".($number?" and number=$number":'').($doc_num?" and doc_num='$doc_num'":'').($service?" and service='$service'":'');
 	if(isset($number)) {
 			try {
 			$result = $db->query($sql);
@@ -281,7 +292,7 @@ Flight::route('GET /customers', function () {
 	elseif($filter == "balance" && $val == 2)
 		$where = "status = 1"; //ROUND(payments-expenses,2) >= 0 and 
 	elseif($filter == "new")
-		$where = "phone < 50000";
+		$where = " `status` = '1' AND (`lastpaydate` IS NULL OR `payments` = '0' AND `phone` < '50000') ";
 	$db = Flight::db();
 	$sql = "select id,credit,name,email,phone,status,ROUND(payments-expenses,2) as balance, Facebook, tariff, created, payments, ROUND(expenses,2) as expenses  
 			from customers".($where?" WHERE $where":'');
@@ -320,7 +331,7 @@ Flight::route('GET /ping', function () {
 			VALUES ('$id')";
 	try {
 		$db->query($sql);
-		$data = file_get_contents("http://www.rusgruppa.me/smsApiX.php?go=Sms&in=terminal&master=$id");
+		//$data = file_get_contents("http://www.rusgruppa.me/smsApiX.php?go=Sms&in=terminal&master=$id");
 		echo 'ok';
 	} catch (Exception $e) { echo $e; }
 	
@@ -361,29 +372,25 @@ Flight::route('GET /getuserinfo2', function () {
 	$db = Flight::db();
 	$number = Flight::request()->query->number;
 	$sql = "SELECT
-	max(b.doc_num) AS m,
-	ROUND(b.amount + p.amount) AS amount,
-	ROUND(
-		b.calls_local + b.calls_other + b.calls_landline + b.calls_special + b.call_international
-	,3) AS calls,
-	ROUND(
-		b.sms_international + b.sms_national
-	,3) AS sms,
-	ROUND(b.gprs,3) as gprs,
-	ROUND(b.roaming,3) as roaming,
-	ROUND(
-		b.over_limit + b.addational_service
-	,3) AS services,
-	customers.*, ROUND(customers.payments - customers.expenses, 1) as balance
-FROM
-	adminweb.bills AS b
-INNER JOIN adminweb.bills AS p ON p.number = b.number
-AND b.doc_num = p.doc_num
-AND p.service = 'promet'
-INNER JOIN adminweb.customers ON customers.phone = b.number
-WHERE
-	b.number = '$number'
-AND b.service = 'bill'";
+			max(b.datetime) AS m,
+				ROUND(b.amount) AS amount,
+				ROUND(
+					b.calls_local + b.calls_other + b.calls_landline + b.calls_special + b.call_international
+				,3) AS calls,
+				ROUND(
+					b.sms_international + b.sms_national
+				,3) AS sms,
+				ROUND(b.gprs,3) as gprs,
+				ROUND(b.roaming,3) as roaming,
+				ROUND(
+					b.over_limit + b.addational_service
+				,3) AS services,
+				customers.*, ROUND(customers.payments - customers.expenses, 2) as balance
+			FROM
+			bills as b
+			RIGHT JOIN customers ON b.number = customers.phone
+			WHERE
+				customers.phone =  '$number'";
 	try {
 		$result = $db->query($sql);
 		//echo '[';
