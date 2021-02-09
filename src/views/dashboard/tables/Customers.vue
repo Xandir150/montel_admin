@@ -762,7 +762,7 @@
         description: '',
       },
       tabs: 0,
-      places: ['Терминал', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
+      places: ['Терминал', 'Наличные', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
       rules: {
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
         digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
@@ -912,7 +912,7 @@
           option: option,
           value: value,
         })
-        this.msgSucess('Option ' + option + ' has ben changed')
+        this.msgSuccess('Option ' + option + ' has ben changed')
       },
       confirmChangeTariff () {
         axios.post('https://admin.montelcompany.me/api/newTariff', {
@@ -922,7 +922,7 @@
         this.dialogChangeTariff = false
         this.newTariffId = -1
         this.editedIndex = -1
-        this.msgSucess('Tariff has ben changed')
+        this.msgSuccess('Tariff has ben changed')
       },
       changeBalance () {
         if (this.editedItem.route === 0) { this.editedItem.balance = this.editedItem.balance * -1 }
@@ -933,7 +933,7 @@
           provider: 'montel',
           description: this.editedItem.description,
         })
-        this.msgSucess('Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance + '€')
+        this.msgSuccess('Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance + '€')
         this.customers[this.editedIndex].balance = (this.editedItem.balance * 100 + this.customers[this.editedIndex].balance * 100) / 100
         this.close()
       },
@@ -952,7 +952,7 @@
           provider: 'montel',
           description: this.editedItem.description,
         })
-        this.msgSucess('Успешно перенесено ' + this.editedItem.toAmount + '€ c ' + this.editedItem.phone + ' на ' + this.editedItem.toPhone)
+        this.msgSuccess('Успешно перенесено ' + this.editedItem.toAmount + '€ c ' + this.editedItem.phone + ' на ' + this.editedItem.toPhone)
         this.customers[this.editedIndex].balance = (this.customers[this.editedIndex].balance * 100 - this.editedItem.toAmount * 100) / 100
         this.close()
       },

@@ -90,12 +90,15 @@ var _default = new _vueRouter["default"]({
           return _interopRequireWildcard(require('@/views/dashboard/tables/Customers'));
         });
       }
-    }, // {
-    //   name: 'Invoices',
-    //   path: 'tables/invoiceslist',
-    //   component: () => import('@/views/dashboard/tables/InvoicesList'),
-    // },
-    {
+    }, {
+      name: 'Reports',
+      path: 'tables/reports',
+      component: function component() {
+        return Promise.resolve().then(function () {
+          return _interopRequireWildcard(require('@/views/dashboard/tables/Reports'));
+        });
+      }
+    }, {
       name: 'Invoices',
       path: 'tables/invoices/:invoiceid',
       props: true,

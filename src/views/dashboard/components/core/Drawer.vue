@@ -141,6 +141,11 @@
           icon: 'mdi-desktop-classic',
           to: '/tables/terminals',
         },
+        {
+          title: 'reports',
+          icon: 'mdi-file-chart',
+          to: '/tables/reports',
+        },
         // {
         //   title: 'typography',
         //   icon: 'mdi-format-font',

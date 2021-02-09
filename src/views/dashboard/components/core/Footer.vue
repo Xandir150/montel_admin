@@ -15,7 +15,7 @@
           md="auto"
         >
           <div class="body-1 font-weight-light pt-6 pt-md-0 text-center">
-            &copy; 2020 Teleteh doo
+            &copy; 2021 Teleteh doo
           </div>
         </v-col>
       </v-row>
