@@ -110,44 +110,11 @@
                       </p>
                     </template>
                   </v-data-table>
-                  <!-- <v-simple-table dense>
-                    <template #default>
-                      <thead>
-                        <tr>
-                          <th class="text-left">
-                            Date
-                          </th>
-                          <th class="text-center">
-                            Amount
-                          </th>
-                          <th class="text-end">
-                            Number
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          v-for="payment in item.payments"
-                          :key="payment.name"
-                        >
-                          <td>{{ payment.datetime }}</td>
-                          <td>{{ payment.amount }}</td>
-                          <td>{{ payment.number }}</td>
-                        </tr>
-                      </tbody>
-                    </template>
-                  </v-simple-table> -->
                 </v-col>
               </v-row>
             </v-container>
           </td>
         </template>
-        <!-- <v-btn
-          color="primary"
-          @click="getTerminals"
-        >
-          Reset
-        </v-btn> -->
       </v-data-table>
       <div class="text-center pt-2">
         <v-text-field
@@ -188,11 +155,6 @@
           { value: 'action', align: 'end', width: 10, sortable: false, filterable: false },
         ]
       },
-      // pingHeaders () {
-      //   return [
-      //     { text: 'Pings', align: 'start', value: 'datetime' },
-      //   ]
-      // },
       paymentHeaders () {
         return [
           { text: 'Payments', align: 'start', value: 'datetime' },

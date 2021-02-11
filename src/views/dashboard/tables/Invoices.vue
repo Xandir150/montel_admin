@@ -162,6 +162,20 @@
         <template #[`item.discount`]="{ item }">
           {{ Math.round(parseFloat(item.discount) * 100) / 100 }}
         </template>
+        <template #[`item.sum`]="{ item }">
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <p
+                class="font-weight-bold"
+                v-bind="attrs"
+                v-on="on"
+              >
+                {{ Math.round((parseFloat(item.amount) +parseFloat(item.overfee) - parseFloat(item.discount)) * 100) / 100 }} €
+              </p>
+            </template>
+            <span>Без PDV!</span>
+          </v-tooltip>
+        </template>
         <v-btn
           color="primary"
           @click="getData"
@@ -172,7 +186,35 @@
           <td :colspan="headers.length">
             <v-container>
               <v-row no-gutters>
-                <v-simple-table
+                <v-data-table
+                  dense
+                  :headers="headersDetail"
+                  :items="item.details"
+                  item-key="row_num"
+                  class="elevation-1"
+                >
+                  <template #[`item.sum`]="{ item }">
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <p
+                          class="font-weight-bold"
+                          v-bind="attrs"
+                          v-on="on"
+                        >
+                          {{ Math.round((parseFloat(item.amount) +parseFloat(item.overfee) - parseFloat(item.discount)) * 100) / 100 }} €
+                        </p>
+                      </template>
+                      <span>Без PDV!</span>
+                    </v-tooltip>
+                  </template>
+                  <template #[`item.amount`]="{ item }">
+                    {{ Math.round(parseFloat(item.amount) * 100) / 100 }}
+                  </template>
+                  <template #[`item.discount`]="{ item }">
+                    {{ Math.round(parseFloat(item.discount) * 100) / 100 }}
+                  </template>
+                </v-data-table>
+                <!-- <v-simple-table
                   dense
                 >
                   <template #default>
@@ -302,7 +344,7 @@
                       </tr>
                     </tbody>
                   </template>
-                </v-simple-table>
+                </v-simple-table> -->
               </v-row>
             </v-container>
           </td>
@@ -343,15 +385,28 @@
       },
       headers () {
         return [
-          { text: 'Дата', align: 'start', width: 120, sortable: false, value: 'date' },
-          { text: 'Номер', value: 'doc_num', sortable: false },
-          { text: 'Провайдер', value: 'provider', sortable: false },
+          { text: 'Дата', align: 'start', width: 120, value: 'date' },
+          { text: 'Период', value: 'month' },
+          { text: 'Провайдер', value: 'provider', width: 140 },
           { text: 'Абонплата', value: 'amount', width: 120, filterable: false },
           { text: 'Расходы', value: 'overfee', width: 120, filterable: false },
-          { text: 'Скидка', value: 'discount', width: 120, sortable: false, filterable: false },
-          { text: 'С клиентов', value: 'tamount', width: 120, sortable: false, filterable: false },
-          { text: 'Балансы клиентов', value: 'client_balances', sortable: false, filterable: false },
-          { text: 'Профит', value: 'revenue', sortable: false, filterable: false },
+          { text: 'Скидка', value: 'discount', width: 120, filterable: false },
+          { text: 'Сумма', value: 'sum', width: 120, filterable: false },
+          { text: 'С клиентов', value: 'tamount', width: 130, filterable: false },
+          { text: 'Балансы клиентов', value: 'client_balances', filterable: false },
+          { text: 'Профит', value: 'revenue', filterable: false },
+        ]
+      },
+      headersDetail () {
+        return [
+          { text: 'Номер', value: 'doc_num' },
+          { text: 'Абонплата', value: 'amount', width: 120, filterable: false },
+          { text: 'Расходы', value: 'overfee', width: 120, filterable: false },
+          { text: 'Скидка', value: 'discount', width: 120, filterable: false },
+          { text: 'Сумма', value: 'sum', width: 120, filterable: false },
+          { text: 'С клиентов', value: 'tamount', width: 130, filterable: false },
+          { text: 'Балансы клиентов', value: 'client_balances', filterable: false },
+          { text: 'Профит', value: 'revenue', filterable: false },
         ]
       },
       dateRangeText () {
@@ -410,7 +465,7 @@
         } else {
           // s
           axios
-            .get('https://admin.montelcompany.me/api/getInvoicesList')
+            .get('https://admin.montelcompany.me/api/getInvoicesList?groupby=month')
             .then(response => {
               this.bills = response.data.map((item) => {
                 return {
@@ -425,7 +480,7 @@
         }
       },
       loadDetails ({ item }) {
-        axios.get('https://admin.montelcompany.me/api/invoices?&doc=' + item.doc_num + '&service=bill')
+        axios.get('https://admin.montelcompany.me/api/getInvoicesList?&groupby=doc_num&month=' + item.month)
           .then(response => {
             item.details = response.data
           })
@@ -440,14 +495,6 @@
         if (this.files) {
           const formData = new FormData()
           formData.append('files', this.files, this.files.name)
-          // files
-          // for (const file of this.files) {
-          //   formData.append('files', file, file.name)
-          //   console.log(file.name)
-          // }
-          // // additional data
-          // formData.append('test', 'foo bar')
-          // this.dialog = false
           axios
             .post('https://admin.montelcompany.me/api/uploadInvoice', formData)
             .then(response => {

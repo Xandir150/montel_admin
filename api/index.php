@@ -38,20 +38,16 @@ Flight::route('POST|OPTIONS /uploadInvoice', function(){
 			$sql = "INSERT INTO adminweb.bills (`number`, `doc_num`, `amount`, `provider`, `calls_local`, 
 										`calls_other`, `calls_landline`, `sms_national`, `sms_international`, 
 										`gprs`, `calls_special`, `call_international`, `roaming`, `addational_service`, 
-										`mms`, `over_limit`, `discount`, `service`) 
+										`mms`, `over_limit`, `discount`, `service`,`month`) 
 				VALUES (
-					".$number.", '".$row['MJESEC']."', ".$row['PRETPLATA'] * $pdv.", 'Mtel', 
+					".$number.", '".explode(".",end(explode(" ", $request->files['files']["name"])))[0]."', ".$row['PRETPLATA'] * $pdv.", 'Mtel', 
 					".$row['POZIVI_U_68_MREZI'] * $pdv.", ".$row['POZIVI_KA_DRUGIM_MREZAMA'] * $pdv.", 
 					".$row['POZIVI_PREMA_FIKSNOJ_MREZI'] * $pdv.", ".$row['SMS_NACIONALNI'] * $pdv.", ".$row['SMS_INTERNACIONALNI'] * $pdv.", 
 					".$row['GPRS'] * $pdv.", ".$row['POZIVI_PREMA_SPEC_BROJEVIMA'] * $pdv.", ".$row['POZIVI_INTERNACIONALNI'] * $pdv.", 
 					".$row['ROMING'] * $pdv.", ".$row['DODATNE_USLUGE'] * $pdv.", ".$row['MMS'] * $pdv.", 
-					".$row['POTROSNJA_PREKO_LIMITA'] * $pdv.", ".$row['POPUST'] * $pdv.", 'bill'
+					".$row['POTROSNJA_PREKO_LIMITA'] * $pdv.", ".$row['POPUST'] * $pdv.", 'bill',".$row['MJESEC']."
 				)
 				ON DUPLICATE KEY UPDATE amount = VALUES(amount);";
-			// echo $sql;
-			// 	break;
-			$db->query($sql);
-			//$db->query("TRUNCATE TABLE adminweb.bills_blackhole;");
 		}
 		echo count($rows); //чушь. переделать.
 	} else {
@@ -128,17 +124,30 @@ Flight::route('GET /getBills', function () {
 	} catch (Exception $e) { echo $e; }
 	
 });
+//список агрегация по периоду
 Flight::route('GET /getInvoicesList', function () {
-	$number = Flight::request()->query->number;
+	$groupby = Flight::request()->query->groupby;
+	$month = Flight::request()->query->month;
+	if(!isset($groupby)) {
+		echo 'не указан праметр groupby';
+		exit;
+	}
 	$db = Flight::db();
-	$sql = "select @row_num:= @row_num + 1 as row_num, DATE(datetime) as date,doc_num,sum(amount) as amount, provider, sum(discount) as discount,
+	$sql = "select @row_num:= @row_num + 1 as row_num, DATE(datetime) as date,".
+			($groupby === 'month' ? " `month`, ":'').
+			($groupby === 'doc_num' ? " `doc_num`, ":'').
+			"sum(amount) as amount, provider, sum(discount) as discount,
 			sum(cb) as client_balances,
 			sum(OverFee) as overfee,
 			sum(OverFeeTRate) as overfeetrate,
 			sum(tAmount) as tamount,
 			sum(revenue) as revenue
-			from bills, (SELECT @row_num:= 0 AS num) as r
-			GROUP by doc_num, provider,DATE(datetime)";
+			from bills, (SELECT @row_num:= 0 AS num) as r ".
+			($month ? " where `month` ='".$month."'":'').
+			"GROUP by ".
+			($groupby === 'month' ? " `month`, ":'').
+			($groupby === 'doc_num' ? " `doc_num`, ":'').
+			" provider,DATE(datetime)";
 			try {
 		$result = $db->query($sql);
 		echo '[';
@@ -152,14 +161,15 @@ Flight::route('GET /getInvoicesList', function () {
 Flight::route('GET /invoices', function () {
 	$db = Flight::db();
 	$number = Flight::request()->query->number;
+	$month = Flight::request()->query->month;
 	$doc_num = Flight::request()->query->doc;
 	$service = Flight::request()->query->service;
 	$where = false;
-	if(isset($number) || isset($doc_num) || isset($service)){
+	if(isset($number) || isset($doc_num) || isset($service) || isset($month)){
 		$where = true;
 	}
 	$sql = "select @row_num:= @row_num + 1 as row_num, bills.* from adminweb.bills, 
-			(SELECT @row_num:= 0 AS num) as r ".($where?" where ":'')."1=1".($number?" and number=$number":'').($doc_num?" and doc_num='$doc_num'":'').($service?" and service='$service'":'');
+			(SELECT @row_num:= 0 AS num) as r ".($where?" where ":'')."1=1".($number?" and number=$number":'').($doc_num?" and doc_num='$doc_num'":'').($month?" and month='$month'":'').($service?" and service='$service'":'');
 	if(isset($number)) {
 			try {
 			$result = $db->query($sql);
