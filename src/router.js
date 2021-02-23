@@ -31,6 +31,16 @@ export default new Router({
           component: () => import('@/views/dashboard/tables/Payments'),
         },
         {
+          name: 'Options',
+          path: 'pages/options',
+          component: () => import('@/views/dashboard/pages/Options'),
+        },
+        {
+          name: 'Messages',
+          path: 'tables/messages',
+          component: () => import('@/views/dashboard/tables/Messages'),
+        },
+        {
           name: 'Notifications',
           path: 'components/notifications',
           component: () => import('@/views/dashboard/component/Notifications'),

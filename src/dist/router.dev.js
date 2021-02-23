@@ -58,6 +58,22 @@ var _default = new _vueRouter["default"]({
         });
       }
     }, {
+      name: 'Options',
+      path: 'pages/options',
+      component: function component() {
+        return Promise.resolve().then(function () {
+          return _interopRequireWildcard(require('@/views/dashboard/pages/Options'));
+        });
+      }
+    }, {
+      name: 'Messages',
+      path: 'tables/messages',
+      component: function component() {
+        return Promise.resolve().then(function () {
+          return _interopRequireWildcard(require('@/views/dashboard/tables/Messages'));
+        });
+      }
+    }, {
       name: 'Notifications',
       path: 'components/notifications',
       component: function component() {

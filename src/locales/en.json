@@ -35,7 +35,7 @@
   "rtables": "Regular Tables",
   "rtl": "RTL Support",
   "search": "Search",
-  "settings": "Настройки",
+  "settings": "Settings",
   "tables": "Tables",
   "tabs": "Tabs",
   "tim": "Teleteh DOO",
@@ -46,5 +46,9 @@
   "vforms": "Validation Forms",
   "widgets": "Widgets",
   "wizard": "Wizard",
-  "reports": "Reports"
+  "reports": "Reports",
+  "settings_subt": "SMS setup",
+  "add": "Add",
+  "save": "Save",
+  "messages": "Messages"
 }

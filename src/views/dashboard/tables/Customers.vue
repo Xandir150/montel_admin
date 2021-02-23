@@ -355,6 +355,7 @@
             show-expand
             calculate-widths
             fixed-header
+            @item-expanded="loadDetails"
           >
             <v-progress-linear
               v-show="progressBar"
@@ -466,12 +467,6 @@
               <v-list-item two-line>
                 <v-list-item-content>
                   <v-list-item-title>
-                    <!-- <router-link
-                      :to="{ path: '/pages/customer/:', query: { id: item.id }}"
-                      tag="span"
-                      exact
-                      :style="{ cursor: 'pointer'}"
-                    > -->
                     <router-link
                       v-slot="{ navigate }"
                       :to="{ path: `/tables/payments/${item.phone}`}"
@@ -609,7 +604,7 @@
                 <v-container>
                   <v-row
                     dense
-                    justify="space-around"
+                    justify="center"
                   >
                     <v-col
                       sm="1"
@@ -639,54 +634,103 @@
                       />
                     </v-col>
                     <v-col>
-                      <v-btn
-                        class="mx-2"
-                        dark
+                      <v-text-field
+                        v-model="item.description"
+                        label="Description"
+                        dense
                         outlined
-                        color="primary"
-                        :href="item.Facebook"
-                        target="_blank"
+                        value="item.description"
+                        @change="setCustomerOption(item.id,'description',item.description)"
+                      />
+                    </v-col>
+                    <v-col>
+                      <v-menu
+                        top
+                        offset-y
                       >
-                        <v-icon dark>
-                          mdi-facebook
-                        </v-icon>
-                      </v-btn>
+                        <template #activator="{ on, attrs }">
+                          <v-btn
+                            color="primary"
+                            dark
+                            outlined
+                            v-bind="attrs"
+                            v-on="on"
+                          >
+                            <v-icon dark>
+                              mdi-android-messages
+                            </v-icon>
+                          </v-btn>
+                        </template>
 
-                      <v-btn
-                        class="mx-2"
-                        dark
-                        outlined
-                        color="primary"
-                        :href="`https://wa.me/382${item.phone}`"
-                        target="_blank"
-                      >
-                        <v-icon dark>
-                          mdi-whatsapp
-                        </v-icon>
-                      </v-btn>
+                        <v-list>
+                          <v-list-item>
+                            <v-list-item-title>
+                              <v-btn
+                                class="mx-2"
+                                dark
+                                small
+                                outlined
+                                color="primary"
+                                :href="item.Facebook"
+                                target="_blank"
+                              >
+                                <v-icon dark>
+                                  mdi-facebook
+                                </v-icon>
+                              </v-btn>
+                            </v-list-item-title>
+                          </v-list-item>
+                          <v-list-item>
+                            <v-list-item-title>
+                              <v-btn
+                                class="mx-2"
+                                dark
+                                small
+                                outlined
+                                color="primary"
+                                :href="`https://wa.me/382${item.phone}`"
+                                target="_blank"
+                              >
+                                <v-icon dark>
+                                  mdi-whatsapp
+                                </v-icon>
+                              </v-btn>
+                            </v-list-item-title>
+                          </v-list-item>
+                          <v-list-item>
+                            <v-list-item-title>
+                              <v-btn
+                                class="mx-2"
+                                dark
+                                small
+                                outlined
+                                color="primary"
+                                :href="`viber://chat?number=%2B382${item.phone}`"
+                                target="_blank"
+                              >
+                                V
+                              </v-btn>
+                            </v-list-item-title>
+                          </v-list-item>
+                          <v-list-item>
+                            <v-list-item-title>
+                              <v-btn
+                                class="mx-2"
+                                dark
+                                small
+                                outlined
+                                color="primary"
+                                :href="`mailto:${item.email}`"
+                              >
+                                <v-icon dark>
+                                  mdi-at
+                                </v-icon>
+                              </v-btn>
+                            </v-list-item-title>
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
 
-                      <v-btn
-                        class="mx-2"
-                        dark
-                        outlined
-                        color="primary"
-                        :href="`viber://chat?number=%2B382${item.phone}`"
-                        target="_blank"
-                      >
-                        V
-                      </v-btn>
-
-                      <v-btn
-                        class="mx-2"
-                        dark
-                        outlined
-                        color="primary"
-                        :href="`mailto:${item.email}`"
-                      >
-                        <v-icon dark>
-                          mdi-at
-                        </v-icon>
-                      </v-btn>
                       <v-btn
                         class="mx-2"
                         dark
@@ -698,6 +742,61 @@
                           mdi-format-list-bulleted-square
                         </v-icon>
                       </v-btn>
+                    </v-col>
+                  </v-row>
+                  <v-spacer />
+                  <v-row
+                    justify="center"
+                    dense
+                  >
+                    <v-col>
+                      <v-data-table
+                        dense
+                        :headers="headersDetail"
+                        :items="details"
+                        item-key="row_num"
+                        class="elevation-1"
+                      >
+                        <template #top>
+                          <v-toolbar
+                            flat
+                          >
+                            <!-- date -->
+                            <v-menu
+                              v-model="menu2"
+                              :close-on-content-click="false"
+                              :nudge-right="40"
+                              transition="scale-transition"
+                              offset-y
+                              min-width="auto"
+                            >
+                              <template #activator="{ on, attrs }">
+                                <v-text-field
+                                  v-model="date"
+                                  prepend-icon="mdi-calendar"
+                                  readonly
+                                  v-bind="attrs"
+                                  v-on="on"
+                                />
+                              </template>
+                              <v-date-picker
+                                v-model="date"
+                                no-title
+                                scrollable
+                                color="primary"
+                                :events="arrayEvents"
+                                event-color="primary"
+                                @input="selectHysDate"
+                              />
+                            </v-menu>
+                            <!-- date -->
+                            <v-spacer />
+                            <p class="font-weight-bold">
+                              {{ hysBalance }} €
+                            </p>
+                          </v-toolbar>
+                        </template>
+                      </v-data-table>
                     </v-col>
                   </v-row>
                 </v-container>
@@ -722,6 +821,7 @@
       dialogChangeTariff: false,
       dialogChangeBalance: false,
       dialogTransBalance: false,
+      menu2: false,
       newTariffId: -1,
       dialog3: false,
       progressBar: true,
@@ -735,8 +835,13 @@
       singleExpand: true,
       customers: [],
       tariffs: [],
+      arrayEvents: [],
+      hysBalance: 0,
+      details: [],
+      date: new Date().toISOString().substr(0, 10),
       deleteItemIndex: -1,
       editedIndex: -1,
+      selected: '',
       editedItem: {
         name: '',
         balance: 0,
@@ -765,8 +870,8 @@
       places: ['Терминал', 'Наличные', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
       rules: {
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
-        digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
-        number: [val => Number.isInteger(Number(val)) || 'Должно быть целое число!'],
+        digits: [val => Number.isInteger(parseInt(val * 100)) || 'Должно быть ЧИСЛО!'],
+        number: [val => Number.isInteger(parseInt(val)) || 'Должно быть целое число!'],
       },
     }),
 
@@ -784,6 +889,14 @@
           { text: 'Статус', align: 'center', value: 'switch', width: 10, sortable: false, filterable: false },
           { text: 'Баланс', align: 'center', value: 'balance', width: 10, filter: this.balanceFilter },
           { value: 'charge', align: 'start', width: 10, sortable: false, filterable: false },
+        ]
+      },
+      headersDetail () {
+        return [
+          { text: 'Дата', value: 'datetime' },
+          { text: 'Оплата', value: 'debt', width: 120, filterable: false },
+          { text: 'Расход', value: 'ccredit', width: 120, filterable: false },
+          { text: 'Баланс', value: 'cb', width: 120, filterable: false },
         ]
       },
       formIsValid () {
@@ -812,6 +925,7 @@
         .then(response => {
           this.customers = response.data.map((item) => {
             return {
+              details: [],
               ...item,
             }
           })
@@ -851,6 +965,21 @@
         if (state < 1) return true
         else return false
       },
+      selectHysDate () {
+        axios.get('https://admin.montelcompany.me/api/getHysBalance?id=' + this.selected + '&date=' + this.date)
+          .then(response => {
+            this.hysBalance = response.data
+          })
+        axios.get('https://admin.montelcompany.me/api/getBills?number=' + this.selected + '&date=' + this.date)
+          .then(response => {
+            this.details = response.data
+          })
+          .catch(function (error) {
+            this.msgError(error)
+            console.log(error)
+          })
+        this.menu2 = false
+      },
       changeStatus (item) {
         this.informColor = 'warning'
         this.informText = 'UNDER CONSTRUCTION'
@@ -865,7 +994,6 @@
           })
       },
       getTariffName () {
-        console.log(this.tariffs[this.newTariffId].text)
         return this.tariffs[this.newTariffId].text
       },
       tabChange: async function (obj, app = this) {
@@ -880,6 +1008,19 @@
           .catch(function (error) {
             console.log(error)
           })
+      },
+      loadDetails ({ item }) {
+        axios.get('https://admin.montelcompany.me/api/getBills?number=' + item.phone)
+          .then(response => {
+            this.details = response.data
+            this.arrayEvents = this.details.map(item => new Date(item.datetime).toISOString().substr(0, 10))
+          })
+          .catch(function (error) {
+            this.msgError(error)
+            console.log(error)
+          })
+        this.selected = item.phone
+        this.hysBalance = item.balance
       },
       editItem (item) {
         this.editedIndex = this.customers.indexOf(item)

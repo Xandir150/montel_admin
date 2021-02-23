@@ -45,7 +45,7 @@
         <v-progress-linear
           v-show="progressBar"
           slot="progress"
-          color="blue"
+          color="primary"
           indeterminate
         />
         <template #top>

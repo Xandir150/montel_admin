@@ -46,5 +46,9 @@
   "vforms": "Validation Forms",
   "widgets": "Widgets",
   "wizard": "Wizard",
-  "reports": "Отчёты"
+  "reports": "Отчёты",
+  "settings_subt": "Настроки SMS semysms.net",
+  "add": "Добавить",
+  "save": "Сохранить",
+  "messages": "Сообщения"
 }

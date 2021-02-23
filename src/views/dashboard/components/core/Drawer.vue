@@ -76,15 +76,15 @@
       <div />
     </v-list>
 
-    <!-- <template v-slot:append>
+    <template #append>
       <base-item
         :item="{
           title: $t('settings'),
           icon: 'mdi-cog',
-          to: '/',
+          to: '/pages/options',
         }"
       />
-    </template> -->
+    </template>
   </v-navigation-drawer>
 </template>
 
@@ -145,6 +145,11 @@
           title: 'reports',
           icon: 'mdi-file-chart',
           to: '/tables/reports',
+        },
+        {
+          title: 'messages',
+          icon: 'mdi-android-messages',
+          to: '/tables/messages',
         },
         // {
         //   title: 'typography',
