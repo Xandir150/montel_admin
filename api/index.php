@@ -89,16 +89,16 @@ Flight::route('POST|OPTIONS /setCustomerOption', function(){
 		echo $db->query($sql);
 	}
 });
-Flight::route('POST|OPTIONS /newTariff', function(){
-	$request = Flight::request()->data->getData();
-	$id = $request['id'];
-	$newTariffId = $request['newTariffId'];
-	if(isset($id) && isset($newTariffId)) {
-		$db = Flight::db();
-		$sql = "UPDATE adminweb.customers SET tariff = $newTariffId WHERE id = $id LIMIT 1";
-		echo $db->query($sql);
-	}
-});
+// Flight::route('POST|OPTIONS /newTariff', function(){
+// 	$request = Flight::request()->data->getData();
+// 	$id = $request['id'];
+// 	$newTariffId = $request['newTariffId'];
+// 	if(isset($id) && isset($newTariffId)) {
+// 		$db = Flight::db();
+// 		$sql = "UPDATE adminweb.customers SET tariff = $newTariffId WHERE id = $id LIMIT 1";
+// 		echo $db->query($sql);
+// 	}
+// });
 Flight::route('POST|OPTIONS /updateProfile', function(){
 	$request = Flight::request()->data->getData();
 	$id = $request['id'];

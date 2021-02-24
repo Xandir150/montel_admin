@@ -456,12 +456,17 @@
         this.dialogChangeTariff = true
       },
       confirmChangeTariff () {
-        axios.post('https://admin.montelcompany.me/api/newTariff', {
-          id: this.customer.id,
-          newTariffId: this.newTariffId,
-        })
+        this.setCustomerOption(this.customer.id, 'tariff', this.newTariffId)
         this.dialogChangeTariff = false
         this.newTariffId = -1
+      },
+      setCustomerOption (userId, option, value) {
+        axios.post('https://admin.montelcompany.me/api/setCustomerOption', {
+          id: userId,
+          option: option,
+          value: value,
+        })
+        this.msgSuccess('Option ' + option + ' has ben changed')
       },
       updateProile (app = this) {
         axios.post('https://admin.montelcompany.me/api/updateProfile', {

@@ -989,10 +989,7 @@
         this.msgSuccess('Option ' + option + ' has ben changed')
       },
       confirmChangeTariff () {
-        axios.post('https://admin.montelcompany.me/api/newTariff', {
-          id: this.editedIndex,
-          newTariffId: this.newTariffId,
-        })
+        this.setCustomerOption(this.editedIndex, 'tariff', this.newTariffId)
         this.dialogChangeTariff = false
         this.newTariffId = -1
         this.editedIndex = -1
