@@ -68,6 +68,7 @@
             suffix="€"
           />
           <v-select
+            v-if="editedItem.route !== 0"
             v-model="editedItem.place"
             :items="places"
             :rules="rules.name"
@@ -867,7 +868,8 @@
         description: '',
       },
       tabs: 0,
-      places: ['Терминал', 'Наличные', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
+      places: [],
+      // places: ['Терминал', 'Наличные', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
       rules: {
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
         digits: [val => Number.isInteger(parseInt(val * 100)) || 'Должно быть ЧИСЛО!'],
@@ -919,6 +921,7 @@
     created () {
       // this.getCustomers()
       this.getTariffs()
+      this.getPayMethods()
     },
     mounted () {
       axios.get('https://admin.montelcompany.me/api/customers')
@@ -990,6 +993,14 @@
           .then(response => {
             this.tariffs = response.data.map(item => {
               return { text: item.Name, value: item.id }
+            })
+          })
+      },
+      getPayMethods: function (app = this) {
+        axios.get('https://admin.montelcompany.me/api/getPayMethods')
+          .then(response => {
+            this.places = response.data.map(item => {
+              return { text: item.name }
             })
           })
       },
@@ -1066,7 +1077,10 @@
         this.msgSuccess('Tariff has ben changed')
       },
       changeBalance () {
-        if (this.editedItem.route === 0) { this.editedItem.balance = this.editedItem.balance * -1 }
+        if (this.editedItem.route === 0) {
+          this.editedItem.balance = this.editedItem.balance * -1
+          this.editedItem.place = 'Корректировка (списание)'
+        }
         axios.post('https://admin.montelcompany.me/api/chargeCustom', {
           number: this.editedItem.phone,
           place: this.editedItem.place,

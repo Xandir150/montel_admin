@@ -60,6 +60,10 @@
                   hide-details
                 />
                 <v-spacer />
+                <div class="text-left pt-2">
+                  Total: {{ sumField('amount', terminals) / 100 }} €
+                </div>
+                <v-spacer />
               </v-toolbar>
             </template>
             <template #[`item.amount`]="{ item }">
@@ -117,7 +121,7 @@
                 </v-container>
               </td>
             </template>
-            <template slot="body.append">
+            <!-- <template slot="body.append">
               <tr class="bold--text">
                 <th />
                 <th />
@@ -132,7 +136,7 @@
                   {{ sumField('amount') / 100 }} €
                 </th>
               </tr>
-            </template>
+            </template> -->
           </v-data-table>
           <!-- <div class="text-center pt-2">
         <v-text-field
@@ -183,6 +187,10 @@
                   single-line
                   hide-details
                 />
+                <v-spacer />
+                <div class="text-left pt-2">
+                  Total: {{ sumField('amount', noTerminals) / 100 }} €
+                </div>
                 <v-spacer />
               </v-toolbar>
             </template>
@@ -285,9 +293,10 @@
       },
       paymentHeaders () {
         return [
-          { text: 'Payments', align: 'start', value: 'datetime' },
-          { text: 'Amount', align: 'center', value: 'amount' },
+          { text: 'Date', align: 'start', value: 'datetime' },
           { text: 'Number', align: 'end', value: 'number' },
+          { text: 'Amount', align: 'center', value: 'amount' },
+          { text: 'Description', align: 'end', value: 'description' },
         ]
       },
     },
@@ -332,8 +341,8 @@
         else if (diff < 1200000) return 'green'
         else return 'orange'
       },
-      sumField (key) {
-        return this.terminals.reduce((a, b) => parseInt(a) + (parseInt(b[key]) || 0), 0)
+      sumField (key, base) {
+        return base.reduce((a, b) => parseInt(a) + (parseInt(b[key]) || 0), 0)
       },
       loadDetails ({ item }) {
         axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.id)
