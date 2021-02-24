@@ -89,7 +89,7 @@
     >
       <v-card>
         <v-card-title>
-          Do you really want to change the tariff for {{ customer.phone }} to "{{ tariffs[newTariffId].text }}"?
+          Do you really want to change the tariff for {{ customer.phone }} to "{{ tariffName }}"?
 
           <v-spacer />
 
@@ -125,7 +125,7 @@
         cols="12"
         md="8"
       >
-        <base-material-card :color="status[customer.status].color">
+        <base-material-card :color="headerColor.color">
           <template #heading>
             <div class="display-2 font-weight-light">
               <strong>{{ customer.name }}</strong>
@@ -139,6 +139,17 @@
           <v-form>
             <v-container class="py-0">
               <v-row>
+                <v-col
+                  v-if="id < 1"
+                  cols="12"
+                >
+                  <v-text-field
+                    v-model="customer.phone"
+                    :rules="rules.digits"
+                    prepend-icon="mdi-phone"
+                    label="Phone"
+                  />
+                </v-col>
                 <v-col
                   cols="12"
                   md="4"
@@ -195,13 +206,13 @@
                   />
                 </v-col>
 
-                <v-col cols="12">
+                <!-- <v-col cols="12">
                   <v-text-field
                     disabled
                     label="Адрес"
                     class="purple-input"
                   />
-                </v-col>
+                </v-col> -->
                 <v-col cols="12">
                   <v-textarea
                     v-model="customer.description"
@@ -218,9 +229,10 @@
                   <v-btn
                     color="success"
                     class="mr-0"
+                    :disabled="!formIsValid2"
                     @click="updateProile"
                   >
-                    Обновить профиль
+                    {{ buttonName }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -230,13 +242,14 @@
       </v-col>
 
       <v-col
+        v-if="id > 0"
         cols="12"
         md="4"
       >
         <base-material-card
           class="v-card-profile"
-          :color="status[customer.status].color"
-          :title="status[customer.status].text"
+          :color="headerColor.color"
+          :title="headerColor.text"
           :text="customer.phone"
         >
           <v-card-text class="text-center">
@@ -298,17 +311,6 @@
                 Расход
               </v-btn>
             </div>
-            <!-- <p class="font-weight-light grey--text">
-              bla bla bla bla bla bla bla and charts...
-            </p>
-
-            <v-btn
-              color="success"
-              rounded
-              class="mr-0"
-            >
-              fire !
-            </v-btn> -->
           </v-card-text>
         </base-material-card>
       </v-col>
@@ -353,15 +355,28 @@
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
         digits: [val => Number.isInteger(Number(val * 100)) || 'Должно быть ЧИСЛО!'],
       },
+      newUserId: '0',
       informSnackbar: false,
       timeout: 3000,
       informColor: 'warning',
       informText: 'UNDER CONSTRUCTION',
       dialogChangeTariff: false,
-      newTariffId: 0,
-      customer: { },
+      newTariffId: -1,
+      customer: {
+        id: -1,
+        name: '',
+        email: '',
+        phone: '',
+        city: '',
+        telegram: '',
+        Facebook: '',
+        credit: 0,
+        decription: '',
+        status: 1,
+        tPercent: 1,
+        tDicsount: 1,
+      },
       tariffs: [],
-      status: [{ color: 'red', text: 'Отключен' }, { color: 'success', text: 'Активный' }],
       iconIndex: 0,
       icons: [
         'mdi-emoticon',
@@ -381,11 +396,17 @@
       formIsValid () {
         return this.editedItem.place && this.editedItem.description && Number.isInteger(this.editedItem.balance * 100)
       },
-      getStatus () {
-        if (this.customer > 0) {
-          return 'Active'
-        }
-        return this.customer.name
+      formIsValid2 () {
+        return Number.isInteger(this.customer.phone * 1) && this.customer.name.length > 3 && this.customer.phone.length === 8
+      },
+      tariffName () {
+        return this.newTariffId >= 0 ? this.tariffs[this.newTariffId].text : ''
+      },
+      buttonName () {
+        return this.id > 0 ? 'Обновить профиль' : 'Добавить клиента'
+      },
+      headerColor () {
+        return this.customer.status === '0' ? { color: 'red', text: 'Отключен' } : { color: 'success', text: 'Активный' }
       },
       icon () {
         return this.icons[this.iconIndex]
@@ -395,15 +416,26 @@
       dialog (val) {
         val || this.close()
       },
+      newUserId () {
+        console.log(this.newUserId)
+      },
     },
     created () {
-      this.getCustomer()
-      this.getTariffs()
+      if (this.id > 0) { this.getCustomer() }
+      // this.getTariffs()
+    },
+    mounted () {
+      axios.get('https://admin.montelcompany.me/api/tariffs')
+        .then(response => {
+          this.tariffs = response.data.map(item => {
+            return { text: item.Name, value: item.id }
+          })
+        })
     },
     methods: {
       getCustomer: function (app = this) {
         axios
-          .get('https://admin.montelcompany.me/api/getCustomerById?id=' + this.id)
+          .get('https://admin.montelcompany.me/api/getCustomer?id=' + this.id)
           .then(function (response) {
             app.customer = response.data
           })
@@ -411,14 +443,14 @@
             console.log(error)
           })
       },
-      getTariffs: function (app = this) {
-        axios.get('https://admin.montelcompany.me/api/tariffs')
-          .then(response => {
-            this.tariffs = response.data.map(item => {
-              return { text: item.Name, value: item.id }
-            })
-          })
-      },
+      // getTariffs: function (app = this) {
+      //   axios.get('https://admin.montelcompany.me/api/tariffs')
+      //     .then(response => {
+      //       this.tariffs = response.data.map(item => {
+      //         return { text: item.Name, value: item.id }
+      //       })
+      //     })
+      // },
       changeTariff (selectObj) {
         this.newTariffId = selectObj
         this.dialogChangeTariff = true
@@ -428,29 +460,6 @@
           id: this.customer.id,
           newTariffId: this.newTariffId,
         })
-        // .then(function (response) {
-        //   console.log(response)
-        // })
-        // .catch(function (error) {
-        //   console.log(error)
-        // })
-        // axios({
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   url: 'https://admin.montelcompany.me/api/newTariff',
-        //   data: {
-        //     id: this.customer.id,
-        //     newTariffId: this.newTariffId,
-        //   },
-        // }).then(function (response) {
-        //   console.log(response.data)
-        //   console.log(response.status)
-        //   console.log(response.statusText)
-        //   console.log(response.headers)
-        //   console.log(response.config)
-        // }, (error) => {
-        //   console.log(error)
-        // })
         this.dialogChangeTariff = false
         this.newTariffId = -1
       },
@@ -470,15 +479,13 @@
           tDicsount: this.customer.tDicsount,
         })
           .then(function (response) {
-            app.informColor = 'success'
-            app.informText = 'Profile has ben updated'
-            app.informSnackbar = true
+            if (app.id > 0) { app.msgSuccess('Profile has ben updated') } else {
+              window.location = `#/pages/customer/${response.data}`
+            }
           })
           .catch(function (error) {
             console.log(error)
-            app.informColor = 'red'
-            app.informText = error
-            app.informSnackbar = true
+            app.msgError(error)
           })
       },
       changeIcon () {
@@ -511,6 +518,16 @@
         this.informSnackbar = true
         this.this.customer.balance = (this.editedItem.balance * 100 + this.this.customer.balance * 100) / 100
         this.close()
+      },
+      msgSuccess (msg) {
+        this.informColor = 'success'
+        this.informText = msg
+        this.informSnackbar = true
+      },
+      msgError (msg) {
+        this.informColor = 'red'
+        this.informText = msg
+        this.informSnackbar = true
       },
       close () {
         this.dialogChangeTariff = false
