@@ -121,31 +121,7 @@
                 </v-container>
               </td>
             </template>
-            <!-- <template slot="body.append">
-              <tr class="bold--text">
-                <th />
-                <th />
-                <th />
-                <th
-                  class="title"
-                  align="end"
-                >
-                  Total:
-                </th>
-                <th class="title">
-                  {{ sumField('amount') / 100 }} €
-                </th>
-              </tr>
-            </template> -->
           </v-data-table>
-          <!-- <div class="text-center pt-2">
-        <v-text-field
-          label="Total"
-          outlined
-          readonly
-          :value="getSum()"
-        />
-      </div> -->
         </base-material-card-table>
       </v-col>
     </v-row>
