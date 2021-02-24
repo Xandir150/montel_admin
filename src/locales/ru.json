@@ -1,4 +1,5 @@
 {
+  "add": "Добавить",
   "avatar": "Montel",
   "buttons": "Buttons",
   "calendar": "Calendar",
@@ -22,8 +23,9 @@
   "lock": "Lock Screen Page",
   "login": "Login Page",
   "lpayments": "Billing (D/C)",
-  "lterminals": "Terminals",
+  "lterminals": "Платежи",
   "maps": "Maps",
+  "messages": "Сообщения",
   "multi": "Multi Level Collapse",
   "my-profile": "My Profile",
   "notifications": "Notifications",
@@ -31,11 +33,14 @@
   "plan": "Choose Plan",
   "pricing": "Pricing",
   "register": "Register Page",
+  "reports": "Отчёты",
   "rforms": "Regular Forms",
   "rtables": "Regular Tables",
   "rtl": "RTL Support",
+  "save": "Сохранить",
   "search": "Search",
   "settings": "Settings",
+  "settings_subt": "Настроки SMS semysms.net",
   "tables": "Tables",
   "tabs": "Tabs",
   "tim": "Teleteh DOO",
@@ -45,10 +50,5 @@
   "user": "User Profile",
   "vforms": "Validation Forms",
   "widgets": "Widgets",
-  "wizard": "Wizard",
-  "reports": "Отчёты",
-  "settings_subt": "Настроки SMS semysms.net",
-  "add": "Добавить",
-  "save": "Сохранить",
-  "messages": "Сообщения"
+  "wizard": "Wizard"
 }

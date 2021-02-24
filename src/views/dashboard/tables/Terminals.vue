@@ -21,110 +21,230 @@
         </v-btn>
       </template>
     </v-snackbar>
-    <base-material-card-table
-      icon="mdi-desktop-classic"
-      title="Terminals"
-      class="px-5 py-3"
-      color="primary"
-    >
-      <v-data-table
-        loading
-        :headers="headers"
-        :items="terminals"
-        sort-by="id"
-        class="elevation-1"
-        :expanded="expanded"
-        :single-expand="singleExpand"
-        :search="search"
-        item-key="id"
-        show-expand
-        @item-expanded="loadDetails"
-      >
-        <v-progress-linear
-          v-show="progressBar"
-          slot="progress"
-          color="blue"
-          indeterminate
-        />
-        <template #top>
-          <v-toolbar
-            flat
+    <v-row>
+      <v-col>
+        <base-material-card-table
+          icon="mdi-desktop-classic"
+          title="Terminals"
+          class="px-5 py-3"
+          color="primary"
+        >
+          <v-data-table
+            loading
+            :headers="headers"
+            :items="terminals"
+            sort-by="id"
+            class="elevation-1"
+            :expanded="expanded"
+            :single-expand="singleExpand"
+            :search="search"
+            item-key="id"
+            show-expand
+            @item-expanded="loadDetails"
           >
-            <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="Search"
-              single-line
-              hide-details
+            <v-progress-linear
+              v-show="progressBar"
+              slot="progress"
+              color="blue"
+              indeterminate
             />
-            <v-spacer />
-          </v-toolbar>
-        </template>
-        <template #[`item.amount`]="{ item }">
-          <p class="font-weight-bold">
-            {{ item.amount/100 }} €
-          </p>
-        </template>
-        <template #[`item.lastpay`]="{ item }">
-          {{ getDateTime(item.lastpay) }}
-        </template>
-        <template #[`item.ping`]="{ item }">
-          <v-chip
-            :color="getColor(item)"
-            dark
-            label
-            :style="{ cursor: 'pointer'}"
-          >
-            {{ getTime(item.ping) }}
-          </v-chip>
-        </template>
-        <template #[`item.action`]="{ item }">
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-icon
-                v-bind="attrs"
-                v-on="on"
-                @click="restart(item.id)"
+            <template #top>
+              <v-toolbar
+                flat
               >
-                mdi-restart
-              </v-icon>
+                <v-text-field
+                  v-model="search"
+                  append-icon="mdi-magnify"
+                  label="Search"
+                  single-line
+                  hide-details
+                />
+                <v-spacer />
+              </v-toolbar>
             </template>
-            <span>Restart terminal</span>
-          </v-tooltip>
-        </template>
-        <template #expanded-item="{ item }">
-          <td :colspan="headers.length">
-            <v-container>
-              <v-row no-gutters>
-                <v-col order="last">
-                  <v-data-table
-                    dense
-                    :headers="paymentHeaders"
-                    :items="item.payments"
-                    item-key="name"
-                    class="elevation-1"
+            <template #[`item.amount`]="{ item }">
+              <p class="font-weight-bold">
+                {{ item.amount/100 }} €
+              </p>
+            </template>
+            <template #[`item.lastpay`]="{ item }">
+              {{ getDateTime(item.lastpay) }}
+            </template>
+            <template #[`item.ping`]="{ item }">
+              <v-chip
+                :color="getColor(item)"
+                dark
+                label
+                :style="{ cursor: 'pointer'}"
+              >
+                {{ getTime(item.ping) }}
+              </v-chip>
+            </template>
+            <template #[`item.action`]="{ item }">
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-icon
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="restart(item.id)"
                   >
-                    <template #[`item.amount`]="{ item }">
-                      <p :style="{ color: getCollectColor(item.number)}">
-                        {{ item.amount/100 }} €
-                      </p>
-                    </template>
-                  </v-data-table>
-                </v-col>
-              </v-row>
-            </v-container>
-          </td>
-        </template>
-      </v-data-table>
-      <div class="text-center pt-2">
+                    mdi-restart
+                  </v-icon>
+                </template>
+                <span>Restart terminal</span>
+              </v-tooltip>
+            </template>
+            <template #expanded-item="{ item }">
+              <td :colspan="headers.length">
+                <v-container>
+                  <v-row no-gutters>
+                    <v-col order="last">
+                      <v-data-table
+                        dense
+                        :headers="paymentHeaders"
+                        :items="item.payments"
+                        item-key="name"
+                        class="elevation-1"
+                      >
+                        <template #[`item.amount`]="{ item }">
+                          <p :style="{ color: getCollectColor(item.number)}">
+                            {{ item.amount/100 }} €
+                          </p>
+                        </template>
+                      </v-data-table>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </td>
+            </template>
+            <template slot="body.append">
+              <tr class="bold--text">
+                <th />
+                <th />
+                <th />
+                <th
+                  class="title"
+                  align="end"
+                >
+                  Total:
+                </th>
+                <th class="title">
+                  {{ sumField('amount') / 100 }} €
+                </th>
+              </tr>
+            </template>
+          </v-data-table>
+          <!-- <div class="text-center pt-2">
         <v-text-field
           label="Total"
           outlined
           readonly
           :value="getSum()"
         />
-      </div>
-    </base-material-card-table>
+      </div> -->
+        </base-material-card-table>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <base-material-card-table
+          icon="mdi-credit-card"
+          title="Other methods"
+          class="px-5 py-3"
+          color="primary"
+        >
+          <v-data-table
+            loading
+            :headers="headersNt"
+            :items="noTerminals"
+            sort-by="place"
+            class="elevation-1"
+            :expanded="expanded"
+            :single-expand="singleExpand"
+            :search="search"
+            item-key="place"
+            show-expand
+            @item-expanded="loadDetailsNt"
+          >
+            <v-progress-linear
+              v-show="progressBar"
+              slot="progress"
+              color="blue"
+              indeterminate
+            />
+            <template #top>
+              <v-toolbar
+                flat
+              >
+                <v-text-field
+                  v-model="search"
+                  append-icon="mdi-magnify"
+                  label="Search"
+                  single-line
+                  hide-details
+                />
+                <v-spacer />
+              </v-toolbar>
+            </template>
+            <template #[`item.amount`]="{ item }">
+              <p class="font-weight-bold">
+                {{ item.amount/100 }} €
+              </p>
+            </template>
+            <template #[`item.lastpay`]="{ item }">
+              {{ getDateTime(item.lastpay) }}
+            </template>
+            <template #[`item.ping`]="{ item }">
+              <v-chip
+                :color="getColor(item)"
+                dark
+                label
+                :style="{ cursor: 'pointer'}"
+              >
+                {{ getTime(item.ping) }}
+              </v-chip>
+            </template>
+            <template #[`item.action`]="{ item }">
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-icon
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="restart(item.id)"
+                  >
+                    mdi-restart
+                  </v-icon>
+                </template>
+                <span>Restart terminal</span>
+              </v-tooltip>
+            </template>
+            <template #expanded-item="{ item }">
+              <td :colspan="headers.length">
+                <v-container>
+                  <v-row no-gutters>
+                    <v-col order="last">
+                      <v-data-table
+                        dense
+                        :headers="paymentHeaders"
+                        :items="item.payments"
+                        item-key="name"
+                        class="elevation-1"
+                      >
+                        <template #[`item.amount`]="{ item }">
+                          <p :style="{ color: getCollectColor(item.number)}">
+                            {{ item.amount/100 }} €
+                          </p>
+                        </template>
+                      </v-data-table>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </td>
+            </template>
+          </v-data-table>
+        </base-material-card-table>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>
@@ -143,6 +263,7 @@
       search: '',
       singleExpand: true,
       terminals: [],
+      noTerminals: [],
     }),
 
     computed: {
@@ -153,6 +274,13 @@
           { text: 'Last Pay', align: 'center', value: 'lastpay', filterable: false },
           { text: 'Balance', align: 'end', value: 'amount', width: 100, filterable: false },
           { value: 'action', align: 'end', width: 10, sortable: false, filterable: false },
+        ]
+      },
+      headersNt () {
+        return [
+          { text: 'Name', align: 'start', value: 'place' },
+          { text: 'Last Pay', align: 'center', value: 'datetime', filterable: false },
+          { text: 'Balance', align: 'end', value: 'amount', width: 100, filterable: false },
         ]
       },
       paymentHeaders () {
@@ -183,6 +311,15 @@
             }
           })
         })
+      axios.get('https://admin.montelcompany.me/api/noTerminals')
+        .then(response => {
+          this.noTerminals = response.data.map((item) => {
+            return {
+              payments: [],
+              ...item,
+            }
+          })
+        })
     },
     methods: {
       getCollectColor (number) {
@@ -195,8 +332,20 @@
         else if (diff < 1200000) return 'green'
         else return 'orange'
       },
+      sumField (key) {
+        return this.terminals.reduce((a, b) => parseInt(a) + (parseInt(b[key]) || 0), 0)
+      },
       loadDetails ({ item }) {
         axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.id)
+          .then(response => {
+            item.payments = response.data
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+      },
+      loadDetailsNt ({ item }) {
+        axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.place)
           .then(response => {
             item.payments = response.data
           })
@@ -212,13 +361,13 @@
         datetime = new Date(new Date(datetime) - this.getTimeOffset() * 60 * 1000)
         return new Date(datetime).toLocaleString()
       },
-      getSum () {
-        var amount = 0
-        this.terminals.forEach(element => {
-          amount += parseInt(element.amount) / 100
-        })
-        return amount + ' €'
-      },
+      // getSum () {
+      //   var amount = 0
+      //   this.terminals.forEach(element => {
+      //     amount += parseInt(element.amount) / 100
+      //   })
+      //   return amount + ' €'
+      // },
       restart (id) {
         this.informColor = 'warning'
         this.informText = 'UNDER CONSTRUCTION'

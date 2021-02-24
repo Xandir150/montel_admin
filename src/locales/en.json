@@ -1,4 +1,5 @@
 {
+  "add": "Add",
   "avatar": "Montel",
   "buttons": "Кнопки",
   "calendar": "Календарь",
@@ -22,8 +23,9 @@
   "lock": "Lock Screen Page",
   "login": "Login Page",
   "lpayments": "Биллинг (Дб\\Кт)",
-  "lterminals": "Терминалы",
+  "lterminals": "Payments",
   "maps": "Maps",
+  "messages": "Messages",
   "multi": "Multi Level Collapse",
   "my-profile": "My Profile",
   "notifications": "Notifications",
@@ -31,11 +33,14 @@
   "plan": "Choose Plan",
   "pricing": "Pricing",
   "register": "Register Page",
+  "reports": "Reports",
   "rforms": "Regular Forms",
   "rtables": "Regular Tables",
   "rtl": "RTL Support",
+  "save": "Save",
   "search": "Search",
   "settings": "Settings",
+  "settings_subt": "SMS setup",
   "tables": "Tables",
   "tabs": "Tabs",
   "tim": "Teleteh DOO",
@@ -45,10 +50,5 @@
   "user": "User Profile",
   "vforms": "Validation Forms",
   "widgets": "Widgets",
-  "wizard": "Wizard",
-  "reports": "Reports",
-  "settings_subt": "SMS setup",
-  "add": "Add",
-  "save": "Save",
-  "messages": "Messages"
+  "wizard": "Wizard"
 }

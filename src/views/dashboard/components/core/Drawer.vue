@@ -138,7 +138,7 @@
         },
         {
           title: 'lterminals',
-          icon: 'mdi-desktop-classic',
+          icon: 'mdi-wallet',
           to: '/tables/terminals',
         },
         {
