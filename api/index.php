@@ -7,6 +7,30 @@ require 'vendor/autoload.php';
 // header('Access-Control-Allow-Methods: DELETE, POST, GET, OPTIONS');
 // header("Access-Control-Allow-Headers: application/json, text/plain, */*");
 
+function sendSingleSms($phone, $msg)
+{
+    $url = "https://semysms.net/api/3/sms.php"; //Url address for sending SMS
+	$device = '274663';  //  Device code
+	$token = '58e2b823555a62381c68ea8e68a57030';  //  Your token (secret)
+
+	$data = array(
+			"phone" => $phone,
+			"msg" => $msg,
+			"device" => $device,
+			"token" => $token
+		);
+
+    $curl = curl_init($url);
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);     
+    $output = curl_exec($curl);
+    curl_close($curl);
+
+    //echo $output;
+}
 
 Kint::enabled(true);
 
@@ -61,7 +85,7 @@ Flight::route('POST|OPTIONS /setCustomerOption', function(){
 	$value = $request['value'];
 	if(isset($id) && isset($option) && isset($value)) {
 		$db = Flight::db();
-		$sql = "UPDATE adminweb.customers SET $option = $value WHERE id = $id LIMIT 1";
+		$sql = "UPDATE adminweb.customers SET $option = '$value' WHERE id = $id LIMIT 1";
 		echo $db->query($sql);
 	}
 });
@@ -91,29 +115,41 @@ Flight::route('POST|OPTIONS /updateProfile', function(){
 	$tDicsount = $request['tDicsount'];
 	if(isset($id) && isset($name)) {
 		$db = Flight::db();
-		$sql = "UPDATE adminweb.customers SET 
-				`name` = '$name',
-				email = '$email',
-				phone = '$phone',
-				city = '$city',
-				telegram = '$telegram',
-				Facebook = '$Facebook',
-				credit = '$credit',
-				`description` = '$description',
-				`status` = '$status',
-				tPercent = '$tPercent',
-				tDicsount = '$tDicsount'
-				WHERE id = '$id' LIMIT 1";
-		echo $db->query($sql);
+		if($id > 0) {
+			$sql = "UPDATE adminweb.customers SET 
+					`name` = '$name',
+					email = '$email',
+					phone = '$phone',
+					city = '$city',
+					telegram = '$telegram',
+					Facebook = '$Facebook',
+					credit = '$credit',
+					`description` = '$description',
+					`status` = '$status',
+					tPercent = '$tPercent',
+					tDicsount = '$tDicsount'
+					WHERE id = '$id' LIMIT 1";
+			echo $db->query($sql);
+		}
+		else {
+			$sql = "INSERT INTO  adminweb.`customers` 
+			(`name`, `email`, `phone`, `city`, `telegram`, `Facebook`, `credit`, `description`, `tariff`, `status`) 
+			VALUES ('$name', '$email', '$phone', '$city', '$telegram', '$Facebook', '0', '$description', '0', '1')";
+			$db->query($sql);
+			$sql = "select id from adminweb.`customers` where phone = '$phone' limit 1";
+			echo $db->query($sql)->fetch_object()->id;
+		}
 	}
 });
 Flight::route('GET /getBills', function () {
 	$number = Flight::request()->query->number;
+	$date = Flight::request()->query->date;
 	$db = Flight::db();
 	$sql = "select @row_num:= @row_num + 1 as row_num, d.*, customers.*, cb as balance from (
 			select montel.payments.id, datetime, number, place, round(amount/100,2) as debt, '' as ccredit, provider, 'pay' as service, description as pdesc, cb from montel.payments union all
 			select adminweb.bills.id, datetime, number, doc_num, '' as debt, tAmount as ccredit, provider, service, '' as pdesc, cb from adminweb.bills
-			) as d inner join adminweb.customers on customers.phone = d.number, (SELECT @row_num:= 0 AS num) as r ".($number?" where number=$number":'')." ORDER BY datetime";
+			) as d inner join adminweb.customers on customers.phone = d.number, (SELECT @row_num:= 0 AS num) as r "
+			.($number?" where number=$number":'').($date?" and `datetime` > '$date'":'')." ORDER BY datetime desc";
 			try {
 		$result = $db->query($sql);
 		echo '[';
@@ -208,7 +244,7 @@ Flight::route('GET /terminals', function () {
 		if($dt == "pings")
 			$sql = "select datetime FROM montel.pings where id='$id' ORDER BY `datetime` DESC limit 1000";
 		elseif ($dt == "payments") 
-			$sql = "select datetime, amount, number from montel.payments WHERE place = '$id' ORDER BY datetime DESC LIMIT 1000";
+			$sql = "select datetime, amount, number, description from montel.payments WHERE place = '$id' ORDER BY datetime DESC LIMIT 1000";
 	}
 	else {
 		$sql = "select pings.id, max(pings.datetime) as ping, payments.datetime as lastpay, collection.amount
@@ -227,11 +263,38 @@ Flight::route('GET /terminals', function () {
 			echo ']';
 		} catch (Exception $e) { echo $e; }
 });
-Flight::route('GET /getCustomerById', function () {
-	$id = Flight::request()->query->id;
+Flight::route('GET /noTerminals', function () {
 	$db = Flight::db();
-	$sql = "SELECT *, ROUND(payments-expenses,2) as balance, ROUND(expenses,2) as cexpenses  FROM adminweb.customers
-			where customers.id = ".$id;
+	$sql = "SELECT
+			Max(payments.datetime) AS datetime,
+			payments.place,
+			collection.amount
+			FROM
+			montel.payments
+			LEFT JOIN montel.collection ON payments.place = collection.place
+			where not exists(select * from montel.pings where payments.place= pings.id)
+			group by place limit 500;";
+	try {
+			$result = $db->query($sql);
+			echo '[';
+			for ($i=0 ; $i<mysqli_num_rows($result) ; $i++) {
+			echo ($i>0?',':'').json_encode(mysqli_fetch_object($result));
+		}
+			echo ']';
+		} catch (Exception $e) { echo $e; }
+});
+Flight::route('GET /getCustomer', function () {
+	$id = Flight::request()->query->id;
+	$phone = Flight::request()->query->phone;
+	$db = Flight::db();
+	if(isset($id)) { 
+		$where = "customers.id = $id";
+	}
+	if(isset($phone)) {
+		$where = "customers.phone = $phone";
+	}
+	$sql = "SELECT *, ROUND(balance,2) as balance, ROUND(expenses,2) as cexpenses  FROM adminweb.customers
+			where $where";
 	try {
 		$result = $db->query($sql);
 		for ($i=0 ; $i<mysqli_num_rows($result) ; $i++) {
@@ -239,6 +302,57 @@ Flight::route('GET /getCustomerById', function () {
 		}
 	} catch (Exception $e) { echo $e; }
 	
+});
+Flight::route('GET /getHysBalance', function () {
+	$id = Flight::request()->query->id;
+	$date = Flight::request()->query->date;
+	$db = Flight::db();
+	$sql = "SELECT balance FROM adminweb.balances_daily
+			where `number` = '$id' and `date` like '$date%' LIMIT 1";
+	try {
+		$result = $db->query($sql);
+		echo $result->fetch_object()->balance;
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /getOptions', function () {
+	$id = Flight::request()->query->id;
+	$db = Flight::db();
+	$sql = "SELECT * FROM `settings`";
+	try {
+		$result = $db->query($sql);
+		for ($i=0 ; $i<mysqli_num_rows($result) ; $i++) {
+			echo ($i > 0?',':'').json_encode(mysqli_fetch_object($result));
+		}
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /getPayMethods', function () {
+	$db = Flight::db();
+	$sql = "SELECT * FROM montel.`payment_methods`";
+	try {
+			$result = $db->query($sql);
+			echo '[';
+			for ($i=0 ; $i<mysqli_num_rows($result) ; $i++) {
+			echo ($i>0?',':'').json_encode(mysqli_fetch_object($result));
+		}
+			echo ']';
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /outbox_sms', function () {	
+	// $request = Flight::request()->query;
+	// $number = $request->number;
+	// if(substr( $number, 0, 3 ) === "382")
+	// 	$number = substr( $number, 3, 8 );
+	echo file_get_contents("https://semysms.net/api/3/outbox_sms.php?token=58e2b823555a62381c68ea8e68a57030&device=274663"); //1136197136
+});
+Flight::route('GET /inbox_sms', function () {	
+	// $request = Flight::request()->query;
+	// $number = $request->number;
+	// if(substr( $number, 0, 3 ) === "382")
+	// 	$number = substr( $number, 3, 8 );
+	echo file_get_contents("https://semysms.net/api/3/inbox_sms.php?token=58e2b823555a62381c68ea8e68a57030&start_id=1");
 });
 Flight::route('GET /dashboardGetInvByMonth', function () {
 	$id = Flight::request()->query->id;
@@ -287,10 +401,57 @@ Flight::route('GET /dashboardGetInvByMonth', function () {
 Flight::route('GET /dashboardGetCacheInterms', function () {
 	$id = Flight::request()->query->id;
 	$db = Flight::db();
-	$sql = "select sum(amount) as amount from montel.collection where place != 'TEST'";
+	$sql = "select sum(amount) as amount
+			FROM
+			montel.collection where EXISTS(select * from montel.pings where pings.id = place)";
 	try {
 		$result = $db->query($sql);
 		echo mysqli_fetch_object($result)->amount;
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /tmpxls', function () {
+	$key = Flight::request()->query->key;
+	$db = Flight::db();
+	if($key === 'NQ7F45968eZYa2A442gwY55SteYhUAnvjKhaz6m6') {
+		$sql = "SELECT
+				customers.phone,
+				customers.`name`,
+				round(cb+tAmount,1) as lastCb,
+				round(amount*1.21+tFixAdd,1) as lastTarif,
+				OverFeeTRate as OverTariff,
+				tOperatorFee+tFixAdd as nextTariff,
+				(cb+tAmount)-ROUND(amount*1.21+tFixAdd,1)-OverFeeTRate-(tOperatorFee+tFixAdd) as toPpay,
+				p.pay
+				FROM
+				customers
+				INNER JOIN tariffs ON customers.tariff = tariffs.id
+				INNER JOIN bills ON customers.phone = bills.number
+				LEFT JOIN (select sum(amount) /100 as pay, number from montel.payments where amount > 0  and datetime > '2021-02-01' group by number ) as p on p.number = customers.phone
+				where `month` = '1,2021' and `status` = 1 and tFixAdd <> 0";
+	}
+	try {
+		$result = $db->query($sql);
+		$all_property = array();  //declare an array for saving property
+
+		//showing property
+		echo '<table class="data-table">
+				<tr class="data-heading">';  //initialize table tag
+		while ($property = mysqli_fetch_field($result)) {
+			echo '<td>' . $property->name . '</td>';  //get field name for header
+			array_push($all_property, $property->name);  //save those to array
+		}
+		echo '</tr>'; //end tr tag
+
+		//showing all data
+		while ($row = mysqli_fetch_array($result)) {
+			echo "<tr>";
+			foreach ($all_property as $item) {
+				echo '<td>' . $row[$item] . '</td>'; //get items using property value
+			}
+			echo '</tr>';
+		}
+		echo "</table>";
 	} catch (Exception $e) { echo $e; }
 	
 });
@@ -298,13 +459,13 @@ Flight::route('GET /customers', function () {
 	$filter = Flight::request()->query->filter;
 	$val = Flight::request()->query->val;
 	if($filter == "balance" && $val == 1)
-		$where = "ROUND(payments-expenses,2) < 0";
+		$where = "ROUND(balance,2) < 0";
 	elseif($filter == "balance" && $val == 2)
 		$where = "status = 1"; //ROUND(payments-expenses,2) >= 0 and 
 	elseif($filter == "new")
 		$where = " `status` = '1' AND (`lastpaydate` IS NULL OR `payments` = '0' AND `phone` < '50000') ";
 	$db = Flight::db();
-	$sql = "select id,credit,name,email,phone,status,ROUND(payments-expenses,2) as balance, Facebook, tariff, created, payments, ROUND(expenses,2) as expenses  
+	$sql = "select id,credit,name,email,phone,status,ROUND(balance,2) as balance, Facebook,description, tariff, created, payments, ROUND(expenses,2) as expenses  
 			from customers".($where?" WHERE $where":'');
 	try {
 		$result = $db->query($sql);
@@ -316,13 +477,14 @@ Flight::route('GET /customers', function () {
 	} catch (Exception $e) { echo $e; }
 	
 });
+
 Flight::route('GET /getUserInfo', function () {	
 	//TODO: сделать запрос имени и долга по номеру телефона. Ответ стрингом.
 	$request = Flight::request()->query;
 	$number = $request->number;
 	if(substr( $number, 0, 3 ) === "382")
 		$number = substr( $number, 3, 8 );
-	echo file_get_contents("http://www.rusgruppa.me/testPhone.php?phone=$number");
+	// echo file_get_contents("http://www.rusgruppa.me/testPhone.php?phone=$number");
 });
 Flight::route('GET /test', function () {	
 	//TODO: сделать запрос имени и долга по номеру телефона. Ответ стрингом.
@@ -360,10 +522,16 @@ Flight::route('POST /charge', function(){
 	$ip = ip2long($request->ip) ;
     $db = Flight::db();
 	$sql = "INSERT INTO montel.payments (number, place, amount, provider, ip)
-			VALUES ('$number','$place', $amount, '$provider', $ip)";
+			VALUES ('$number','$place', $amount, '$provider', $ip);";
 	$db->query($sql);
+	$sql = "select round(cb,2) as balance from payments where number = '".$number."' ORDER BY id DESC limit 1;";
+	try {
+		$result = $db->query($sql);
+		sendSingleSms("0".$number, "На ваш счёт зачислено ". ($amount / 100) ."€. Баланс ".$result->fetch_object()->balance."€");
+	} catch (Exception $e) {  }
 	echo 'ok';
 });
+
 Flight::route('POST|OPTIONS /chargeCustom', function(){
 	//$apr1$htllufe6$GkmB6xbt5y.iv/JbqCy1z/
 	$request = Flight::request()->data->getData();
@@ -372,10 +540,18 @@ Flight::route('POST|OPTIONS /chargeCustom', function(){
 	$amount = $request['amount'];
 	$provider = $request['provider'];
 	$description = $request['description'];
-    $db = Flight::db();
-	$sql = "INSERT INTO montel.payments (number, place, amount, provider, description)
-			VALUES ('$number','$place', $amount * 100, '$provider', '$description')";
-	echo $db->query($sql);
+	if(isset($number)) {
+		$db = Flight::db();
+		$sql = "INSERT INTO montel.payments (number, place, amount, provider, description)
+				VALUES ('$number','$place', $amount * 100, '$provider', '$description')";
+		
+		$sql2 = "select round(balance,2) as balance from adminweb.customers where phone = '".$number."' limit 1;";
+		try {
+			$result = $db->query($sql2);
+			sendSingleSms("0".$number, "На ваш счёт зачислено ". ($amount) ."€."); //todo balance
+		} catch (Exception $e) {  }
+		echo $db->query($sql);
+	}
 });
 ///user lk
 Flight::route('GET /getuserinfo2', function () {
@@ -395,7 +571,7 @@ Flight::route('GET /getuserinfo2', function () {
 				ROUND(
 					b.over_limit + b.addational_service
 				,3) AS services,
-				customers.*, ROUND(customers.payments - customers.expenses, 2) as balance
+				customers.*, ROUND(customers.balance, 2) as balance
 			FROM
 			bills as b
 			RIGHT JOIN customers ON b.number = customers.phone
