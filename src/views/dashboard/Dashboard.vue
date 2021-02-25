@@ -138,10 +138,11 @@
             <v-icon
               class="mr-1"
               small
+              color="red"
             >
-              mdi-clock-outline
+              mdi-alert
             </v-icon>
-            <span class="caption grey--text font-weight-light">updated 4 minutes ago</span>
+            <span class="caption grey--text font-weight-light">Never</span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -205,10 +206,11 @@
             <v-icon
               class="mr-1"
               small
+              color="red"
             >
-              mdi-clock-outline
+              mdi-alert
             </v-icon>
-            <span class="caption grey--text font-weight-light">campaign sent 26 minutes ago</span>
+            <span class="caption grey--text font-weight-light">Never</span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -221,10 +223,10 @@
         <base-material-stats-card
           color="info"
           icon="mdi-account-arrow-left"
-          title="New customers"
-          value="0"
-          sub-icon="mdi-clock"
-          sub-text="Just Updated"
+          :title="getMonthName()"
+          :value="newCustomers"
+          sub-icon="mdi-clock-outline"
+          sub-text="Обновлено сейчас"
           @click="color"
         />
       </v-col>
@@ -241,11 +243,11 @@
         >
           <base-material-stats-card
             color="primary"
-            icon="mdi-wallet"
-            title="В терминалах"
+            icon="mdi-sack"
+            title="Для инкасации"
             :value="mit"
             :style="{ cursor: 'pointer', font: 'bold' }"
-            sub-icon="mdi-clock"
+            sub-icon="mdi-clock-outline"
             sub-text="Обновлено сейчас"
           />
         </router-link>
@@ -261,7 +263,8 @@
           icon="mdi-cash-plus"
           title=""
           value="0.00 €"
-          sub-icon="mdi-calendar"
+          sub-icon="mdi-alert"
+          sub-icon-color="red"
           sub-text="Never"
         />
       </v-col>
@@ -274,11 +277,10 @@
         <base-material-stats-card
           color="orange"
           icon="mdi-account"
-          title="Customers"
-          value="3640"
-          sub-icon="mdi-alert"
-          sub-icon-color="red"
-          sub-text="Get More Space..."
+          title="Всего активных"
+          :value="totalActive"
+          sub-icon="mdi-clock-outline"
+          sub-text="Обновлено сейчас"
         />
       </v-col>
 
@@ -574,6 +576,8 @@
         },
         invoices: [],
         mit: '0 €',
+        newCustomers: 0,
+        totalActive: 0,
       }
     },
     computed: {
@@ -597,6 +601,10 @@
       color () {
         this.$vuetify.theme.themes[this.isDark ? 'dark' : 'light'].primary = '#E91E63'
       },
+      getMonthName () {
+        const m = new Date()
+        return 'Новые за ' + m.toLocaleString('default', { month: 'long' })
+      },
       getData: function (app = this) {
         axios
           .get('https://admin.montelcompany.me/api/dashboardGetInvByMonth')
@@ -608,7 +616,7 @@
             console.log(error)
           })
         axios
-          .get('https://admin.montelcompany.me/api/getInvoicesList')
+          .get('https://admin.montelcompany.me/api/getInvoicesList?groupby=month')
           .then(response => {
             this.invoices = response.data
           })
@@ -616,9 +624,25 @@
             console.log(error)
           })
         axios
-          .get('https://admin.montelcompany.me/api/dashboardGetCacheInterms')
+          .get('https://admin.montelcompany.me/api/dashboardCollectSum')
           .then(response => {
             this.mit = response.data / 100 + ' €'
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+        axios
+          .get('https://admin.montelcompany.me/api/dashboardNewCustomers')
+          .then(response => {
+            this.newCustomers = response.data
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+        axios
+          .get('https://admin.montelcompany.me/api/dashboardTotalCustomers')
+          .then(response => {
+            this.totalActive = response.data
           })
           .catch(function (error) {
             console.log(error)
