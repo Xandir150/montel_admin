@@ -422,7 +422,6 @@
     },
     created () {
       if (this.id > 0) { this.getCustomer() }
-      // this.getTariffs()
     },
     mounted () {
       axios.get('https://admin.montelcompany.me/api/tariffs')
@@ -443,14 +442,6 @@
             console.log(error)
           })
       },
-      // getTariffs: function (app = this) {
-      //   axios.get('https://admin.montelcompany.me/api/tariffs')
-      //     .then(response => {
-      //       this.tariffs = response.data.map(item => {
-      //         return { text: item.Name, value: item.id }
-      //       })
-      //     })
-      // },
       changeTariff (selectObj) {
         this.newTariffId = selectObj
         this.dialogChangeTariff = true
@@ -483,14 +474,15 @@
           tPercent: this.customer.tPercent,
           tDicsount: this.customer.tDicsount,
         })
-          .then(function (response) {
-            if (app.id > 0) { app.msgSuccess('Profile has ben updated') } else {
-              window.location = `#/pages/customer/${response.data}`
+          .then(response => {
+            if (this.id > 0) { app.msgSuccess('Profile has ben updated') } else {
+              this.customer.id = response.data
+              window.location = `#/pages/customer/${this.customer.id}`
             }
           })
-          .catch(function (error) {
+          .catch(error => {
             console.log(error)
-            app.msgError(error)
+            this.msgError(error)
           })
       },
       changeIcon () {
@@ -518,9 +510,7 @@
           provider: 'montel',
           description: this.editedItem.description,
         })
-        this.informColor = 'success'
-        this.informText = 'Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance
-        this.informSnackbar = true
+        this.msgSuccess('Успешно изменен баланс ' + this.editedItem.phone + ' на ' + this.editedItem.balance)
         this.this.customer.balance = (this.editedItem.balance * 100 + this.this.customer.balance * 100) / 100
         this.close()
       },
