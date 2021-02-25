@@ -89,16 +89,6 @@ Flight::route('POST|OPTIONS /setCustomerOption', function(){
 		echo $db->query($sql);
 	}
 });
-// Flight::route('POST|OPTIONS /newTariff', function(){
-// 	$request = Flight::request()->data->getData();
-// 	$id = $request['id'];
-// 	$newTariffId = $request['newTariffId'];
-// 	if(isset($id) && isset($newTariffId)) {
-// 		$db = Flight::db();
-// 		$sql = "UPDATE adminweb.customers SET tariff = $newTariffId WHERE id = $id LIMIT 1";
-// 		echo $db->query($sql);
-// 	}
-// });
 Flight::route('POST|OPTIONS /updateProfile', function(){
 	$request = Flight::request()->data->getData();
 	$id = $request['id'];
@@ -136,8 +126,7 @@ Flight::route('POST|OPTIONS /updateProfile', function(){
 			(`name`, `email`, `phone`, `city`, `telegram`, `Facebook`, `credit`, `description`, `tariff`, `status`) 
 			VALUES ('$name', '$email', '$phone', '$city', '$telegram', '$Facebook', '0', '$description', '0', '1')";
 			$db->query($sql);
-			$sql = "select id from adminweb.`customers` where phone = '$phone' limit 1";
-			echo $db->query($sql)->fetch_object()->id;
+			echo $db->insert_id;
 		}
 	}
 });
@@ -165,7 +154,7 @@ Flight::route('GET /getInvoicesList', function () {
 	$groupby = Flight::request()->query->groupby;
 	$month = Flight::request()->query->month;
 	if(!isset($groupby)) {
-		echo 'не указан праметр groupby';
+		echo 'не указан праметр group by';
 		exit;
 	}
 	$db = Flight::db();
@@ -183,7 +172,7 @@ Flight::route('GET /getInvoicesList', function () {
 			"GROUP by ".
 			($groupby === 'month' ? " `month`, ":'').
 			($groupby === 'doc_num' ? " `doc_num`, ":'').
-			" provider,DATE(datetime)";
+			" provider,DATE(datetime) order by date desc";
 			try {
 		$result = $db->query($sql);
 		echo '[';
@@ -358,12 +347,12 @@ Flight::route('GET /dashboardGetInvByMonth', function () {
 	$id = Flight::request()->query->id;
 	$db = Flight::db();
 	$sql = "select * from (
-			select DATE_FORMAT(STR_TO_DATE(doc_num, '%m'),'%b') as im, sum(amount) as iamount, doc_num
+			select DATE_FORMAT(STR_TO_DATE(`month`, '%m'),'%b') as im, sum(amount) as iamount, `month`
 			from adminweb.bills 
-			where YEAR(datetime) = YEAR(CURDATE()) group by doc_num) as i
+			where YEAR(datetime) = YEAR(CURDATE()) group by `month`) as i
 			inner JOIn (
 			select DATE_FORMAT(datetime,'%b') as pm, sum(amount) / 100 as pamount from montel.payments 
-			where provider = 'montel' and YEAR(datetime) = YEAR(CURDATE()) group by DATE_FORMAT(datetime,'%b')) as p on pm=im order by doc_num"; //сделать не текущий год, а прошлые 12 мес
+			where provider = 'montel' and YEAR(datetime) = YEAR(CURDATE()) group by DATE_FORMAT(datetime,'%b')) as p on pm=im order by `month`"; //сделать не текущий год, а прошлые 12 мес
 	try {
 		$result = $db->query($sql);
 		// data: {
@@ -398,12 +387,35 @@ Flight::route('GET /dashboardGetInvByMonth', function () {
 	} catch (Exception $e) { echo $e; }
 	
 });
-Flight::route('GET /dashboardGetCacheInterms', function () {
+Flight::route('GET /dashboardCollectSum', function () {
 	$id = Flight::request()->query->id;
 	$db = Flight::db();
+	// $sql = "select sum(amount) as amount
+	// 		FROM
+	// 		montel.collection where EXISTS(select * from montel.pings where pings.id = place)";
 	$sql = "select sum(amount) as amount
 			FROM
-			montel.collection where EXISTS(select * from montel.pings where pings.id = place)";
+			montel.collection where place not like 'Корректировка (списание)'";
+	try {
+		$result = $db->query($sql);
+		echo mysqli_fetch_object($result)->amount;
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /dashboardNewCustomers', function () {
+	$id = Flight::request()->query->id;
+	$db = Flight::db();
+	$sql = "SELECT count(*) as amount FROM `customers` WHERE MONTH(created) = MONTH(CURRENT_DATE - INTERVAL 1 MONTH)";
+	try {
+		$result = $db->query($sql);
+		echo mysqli_fetch_object($result)->amount;
+	} catch (Exception $e) { echo $e; }
+	
+});
+Flight::route('GET /dashboardTotalCustomers', function () {
+	$id = Flight::request()->query->id;
+	$db = Flight::db();
+	$sql = "SELECT count(*) as amount FROM `customers` WHERE status = 1";
 	try {
 		$result = $db->query($sql);
 		echo mysqli_fetch_object($result)->amount;
