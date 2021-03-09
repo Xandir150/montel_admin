@@ -101,15 +101,57 @@
             <template #expanded-item="{ item }">
               <td :colspan="headers.length">
                 <v-container>
-                  <v-row no-gutters>
+                  <v-row
+                    no-gutters
+                    dense
+                  >
                     <v-col order="last">
                       <v-data-table
                         dense
                         :headers="paymentHeaders"
-                        :items="item.payments"
-                        item-key="name"
+                        :items="payments"
+                        item-key="row_num"
                         class="elevation-1"
                       >
+                      <template #top>
+                          <v-toolbar
+                            flat
+                          >
+                            <!-- date -->
+                            <v-menu
+                              v-model="menu2"
+                              :close-on-content-click="false"
+                              :nudge-right="40"
+                              transition="scale-transition"
+                              offset-y
+                              min-width="auto"
+                            >
+                              <template #activator="{ on, attrs }">
+                                <v-text-field
+                                  v-model="date"
+                                  prepend-icon="mdi-calendar"
+                                  readonly
+                                  v-bind="attrs"
+                                  v-on="on"
+                                />
+                              </template>
+                              <v-date-picker
+                                v-model="date"
+                                no-title
+                                scrollable
+                                color="primary"
+                                :events="arrayEvents"
+                                event-color="primary"
+                                @input="selectHysDate"
+                              />
+                            </v-menu>
+                            <!-- date -->
+                            <v-spacer />
+                            <p class="font-weight-bold">
+                              {{ sumField('amount', payments) / 100 }} €
+                            </p>
+                          </v-toolbar>
+                        </template>
                         <template #[`item.amount`]="{ item }">
                           <p :style="{ color: getCollectColor(item.number)}">
                             {{ item.amount/100 }} €
@@ -137,14 +179,14 @@
             loading
             :headers="headersNt"
             :items="noTerminals"
-            sort-by="place"
+            sort-by="id"
             class="elevation-1"
             :expanded="expanded"
             :single-expand="singleExpand"
             :search="search"
-            item-key="place"
+            item-key="row_num"
             show-expand
-            @item-expanded="loadDetailsNt"
+            @item-expanded="loadDetails"
           >
             <v-progress-linear
               v-show="progressBar"
@@ -210,10 +252,49 @@
                       <v-data-table
                         dense
                         :headers="paymentHeaders"
-                        :items="item.payments"
-                        item-key="name"
+                        :items="payments"
+                        item-key="row_num"
                         class="elevation-1"
                       >
+                      <template #top>
+                          <v-toolbar
+                            flat
+                          >
+                            <!-- date -->
+                            <v-menu
+                              v-model="menu3"
+                              :close-on-content-click="false"
+                              :nudge-right="40"
+                              transition="scale-transition"
+                              offset-y
+                              min-width="auto"
+                            >
+                              <template #activator="{ on, attrs }">
+                                <v-text-field
+                                  v-model="date"
+                                  prepend-icon="mdi-calendar"
+                                  readonly
+                                  v-bind="attrs"
+                                  v-on="on"
+                                />
+                              </template>
+                              <v-date-picker
+                                v-model="date"
+                                no-title
+                                scrollable
+                                color="primary"
+                                :events="arrayEvents"
+                                event-color="primary"
+                                @input="selectHysDate"
+                              />
+                            </v-menu>
+                            <!-- date -->
+                            <v-spacer />
+                            <p class="font-weight-bold">
+                              {{ sumField('amount', payments) / 100 }} €
+                            </p>
+                          </v-toolbar>
+                        </template>
                         <template #[`item.amount`]="{ item }">
                           <p :style="{ color: getCollectColor(item.number)}">
                             {{ item.amount/100 }} €
@@ -239,6 +320,9 @@
       dates: [new Date().toISOString().substr(0, 10), new Date().toISOString().substr(0, 10)],
       progressBar: true,
       informSnackbar: false,
+      menu2: false,
+      menu3: false,
+      date: new Date().toISOString().substr(0, 10),
       informColor: 'warning',
       informText: 'UNDER CONSTRUCTION',
       timeout: 3000,
@@ -247,7 +331,11 @@
       search: '',
       singleExpand: true,
       terminals: [],
+      payments: [],
       noTerminals: [],
+      arrayEvents: [],
+      hysBalance: 0,
+      selected: '',
     }),
 
     computed: {
@@ -262,7 +350,7 @@
       },
       headersNt () {
         return [
-          { text: 'Name', align: 'start', value: 'place' },
+          { text: 'Name', align: 'start', value: 'id' },
           { text: 'Last Pay', align: 'center', value: 'datetime', filterable: false },
           { text: 'Balance', align: 'end', value: 'amount', width: 100, filterable: false },
         ]
@@ -272,7 +360,8 @@
           { text: 'Date', align: 'start', value: 'datetime' },
           { text: 'Number', align: 'end', value: 'number' },
           { text: 'Amount', align: 'center', value: 'amount' },
-          { text: 'Description', align: 'end', value: 'description' },
+          { text: 'Name', align: 'start', value: 'name' },
+          { text: 'Description', align: 'start', value: 'description' },
         ]
       },
     },
@@ -296,7 +385,7 @@
             }
           })
         })
-      axios.get('https://admin.montelcompany.me/api/noTerminals')
+      axios.get('https://admin.montelcompany.me/api/noTerminals') // TODO: объеденить
         .then(response => {
           this.noTerminals = response.data.map((item) => {
             return {
@@ -320,39 +409,49 @@
       sumField (key, base) {
         return base.reduce((a, b) => parseInt(a) + (parseInt(b[key]) || 0), 0)
       },
-      loadDetails ({ item }) {
+      loadDetails ({ item, date = 0 }) {
         axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.id)
           .then(response => {
-            item.payments = response.data
+            this.payments = response.data
+            this.arrayEvents = this.payments.map(item => new Date(item.datetime).toISOString().substr(0, 10))
           })
           .catch(function (error) {
             console.log(error)
           })
+        this.selected = item
+        // this.hysBalance = item.balance
       },
       loadDetailsNt ({ item }) {
-        axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.place)
+        axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + item.place) // TODO: объеденить
           .then(response => {
-            item.payments = response.data
+            this.payments = response.data
+            this.arrayEvents = this.payments.map(item => new Date(item.datetime).toISOString().substr(0, 10))
           })
           .catch(function (error) {
             console.log(error)
           })
+        this.selected = item.place
+        // this.hysBalance = item.balance
       },
       getTime (datetime) {
         datetime = new Date(new Date(datetime).getTime() - this.getTimeOffset() * 60 * 1000)
         return new Date(datetime).toLocaleTimeString()
       },
+      selectHysDate () {
+        axios.get('https://admin.montelcompany.me/api/terminals?dt=payments&id=' + this.selected.id + '&fromdate=' + this.date)
+          .then(response => {
+            this.payments = response.data
+          })
+          .catch(function (error) {
+            console.log(error)
+          })
+        this.menu2 = false
+        this.menu3 = false
+      },
       getDateTime (datetime) {
         datetime = new Date(new Date(datetime) - this.getTimeOffset() * 60 * 1000)
         return new Date(datetime).toLocaleString()
       },
-      // getSum () {
-      //   var amount = 0
-      //   this.terminals.forEach(element => {
-      //     amount += parseInt(element.amount) / 100
-      //   })
-      //   return amount + ' €'
-      // },
       restart (id) {
         this.informColor = 'warning'
         this.informText = 'UNDER CONSTRUCTION'

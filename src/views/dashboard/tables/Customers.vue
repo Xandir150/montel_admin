@@ -347,7 +347,8 @@
             loading
             :headers="headers"
             :items="customers"
-            sort-by="id"
+            :sort-by="sortby"
+            :sort-desc="sortdesc"
             class="elevation-1"
             :expanded="expanded"
             :single-expand="singleExpand"
@@ -764,6 +765,8 @@
       date: new Date().toISOString().substr(0, 10),
       deleteItemIndex: -1,
       editedIndex: -1,
+      sortby: 'id',
+      sortdesc: false,
       selected: '',
       editedItem: {
         name: '',
@@ -794,8 +797,8 @@
       // places: ['Терминал', 'Наличные', 'Безналичный расчет', 'Альфа-банк', 'Тинькофф', 'CKB', 'Сбербанк', 'Почта'],
       rules: {
         name: [val => (val || '').length > 0 || 'Это обязательное поле'],
-        digits: [val => Number.isInteger(parseInt(val * 100)) || 'Должно быть ЧИСЛО!'],
-        number: [val => Number.isInteger(parseInt(val)) || 'Должно быть целое число!'],
+        digits: [val => Number.isInteger(parseInt(val * 100, 10)) || 'Должно быть ЧИСЛО!'],
+        number: [val => Number.isInteger(parseInt(val, 10)) || 'Должно быть целое число!'],
       },
     }),
 
@@ -818,16 +821,17 @@
       headersDetail () {
         return [
           { text: 'Дата', value: 'datetime' },
+          { text: 'Основание', value: 'place' },
           { text: 'Оплата', value: 'debt', width: 120, filterable: false },
           { text: 'Расход', value: 'ccredit', width: 120, filterable: false },
           { text: 'Баланс', value: 'cb', width: 120, filterable: false },
         ]
       },
       formIsValid () {
-        return this.editedItem.place && this.editedItem.description && Number.isInteger(this.editedItem.balance * 100)
+        return this.editedItem.place && this.editedItem.description && Number.isInteger(parseInt(this.editedItem.balance * 100, 10))
       },
       formTransIsValid () {
-        return this.editedItem.toPhone && this.editedItem.description && Number.isInteger(this.editedItem.toAmount * 100) && this.editedItem.toName
+        return this.editedItem.toPhone && this.editedItem.description && Number.isInteger(parseInt(this.editedItem.toAmount * 100, 10)) && this.editedItem.toName
       },
     },
 
@@ -858,7 +862,7 @@
     },
     methods: {
       calcNewBalance () {
-        if (Number.isInteger(this.editedItem.toAmount * 100)) {
+        if (Number.isInteger(parseInt(this.editedItem.toAmount * 100, 10))) {
           this.editedItem.balance = Math.round(this.editedItem.balance * 100 - this.editedItem.toAmount * 100) / 100
           this.editedItem.toBalance = Math.round(this.editedItem.toBalance * 100 + this.editedItem.toAmount * 100) / 100
         }
@@ -930,9 +934,16 @@
         return this.tariffs[this.newTariffId].text
       },
       tabChange: async function (obj, app = this) {
-        app.progressBar = true
+        this.progressBar = true
         var filter = 'new'
-        if (obj !== 3) { filter = 'balance&val=' + obj }
+        if (obj !== 3) {
+          filter = 'balance&val=' + obj
+          this.sortby = 'id'
+          this.sortdesc = false
+        } else {
+          this.sortby = 'created'
+          this.sortdesc = true
+        }
         await axios
           .get('https://admin.montelcompany.me/api/customers?filter=' + filter)
           .then(function (response) {
