@@ -10,7 +10,7 @@ require 'vendor/autoload.php';
 function sendSingleSms($phone, $msg)
 {
     $url = "https://semysms.net/api/3/sms.php"; //Url address for sending SMS
-	$device = '274663';  //  Device code
+	$device = '275218';  //  Device code
 	$token = '58e2b823555a62381c68ea8e68a57030';  //  Your token (secret)
 
 	$data = array(
@@ -59,6 +59,10 @@ Flight::route('POST|OPTIONS /uploadInvoice', function(){
 			if(substr( $number, 0, 3 ) === "382")
 				$number = substr( $number, 3, 8 );
 			$db = Flight::db();
+			if(strlen(explode(".",end(explode(" ", $request->files['files']["name"])))[0]) != 7) {
+				echo 'ERROR INVOICE NUMBER';
+				break;
+			}
 			$sql = "INSERT INTO adminweb.bills (`number`, `doc_num`, `amount`, `provider`, `calls_local`, 
 										`calls_other`, `calls_landline`, `sms_national`, `sms_international`, 
 										`gprs`, `calls_special`, `call_international`, `roaming`, `addational_service`, 
@@ -69,9 +73,9 @@ Flight::route('POST|OPTIONS /uploadInvoice', function(){
 					".$row['POZIVI_PREMA_FIKSNOJ_MREZI'] * $pdv.", ".$row['SMS_NACIONALNI'] * $pdv.", ".$row['SMS_INTERNACIONALNI'] * $pdv.", 
 					".$row['GPRS'] * $pdv.", ".$row['POZIVI_PREMA_SPEC_BROJEVIMA'] * $pdv.", ".$row['POZIVI_INTERNACIONALNI'] * $pdv.", 
 					".$row['ROMING'] * $pdv.", ".$row['DODATNE_USLUGE'] * $pdv.", ".$row['MMS'] * $pdv.", 
-					".$row['POTROSNJA_PREKO_LIMITA'] * $pdv.", ".$row['POPUST'] * $pdv.", 'bill',".$row['MJESEC']."
-				)
-				ON DUPLICATE KEY UPDATE amount = VALUES(amount);";
+					".$row['POTROSNJA_PREKO_LIMITA'] * $pdv.", ".$row['POPUST'] * $pdv.", 'bill','".$row['MJESEC']."'
+				);";
+			$db->query($sql);
 		}
 		echo count($rows); //чушь. переделать.
 	} else {
@@ -138,7 +142,7 @@ Flight::route('GET /getBills', function () {
 			select montel.payments.id, datetime, number, place, round(amount/100,2) as debt, '' as ccredit, provider, 'pay' as service, description as pdesc, cb from montel.payments union all
 			select adminweb.bills.id, datetime, number, doc_num, '' as debt, tAmount as ccredit, provider, service, '' as pdesc, cb from adminweb.bills
 			) as d inner join adminweb.customers on customers.phone = d.number, (SELECT @row_num:= 0 AS num) as r "
-			.($number?" where number=$number":'').($date?" and `datetime` > '$date'":'')." ORDER BY datetime desc";
+			.($number?" where number=$number":'').($date?" and `datetime` >= '$date'":'')." ORDER BY datetime desc";
 			try {
 		$result = $db->query($sql);
 		echo '[';
@@ -228,20 +232,34 @@ Flight::route('GET /tariffs', function () {
 Flight::route('GET /terminals', function () {
 	$id = Flight::request()->query->id;
 	$dt = Flight::request()->query->dt;
+	$fromdate = Flight::request()->query->fromdate;
 	$db = Flight::db();
 	if(isset($id)) {
 		if($dt == "pings")
-			$sql = "select datetime FROM montel.pings where id='$id' ORDER BY `datetime` DESC limit 1000";
+			$sql = "SELECT datetime FROM montel.pings where id='$id' ORDER BY `datetime` DESC limit 1000";
 		elseif ($dt == "payments") 
-			$sql = "select datetime, amount, number, description from montel.payments WHERE place = '$id' ORDER BY datetime DESC LIMIT 1000";
+			$sql = "SELECT
+					@row_num:= @row_num + 1 as row_num,
+					montel.payments.datetime,
+					montel.payments.amount,
+					montel.payments.number,
+					montel.payments.description,
+					adminweb.customers.`name`
+					FROM
+					montel.payments
+					RIGHT JOIN adminweb.customers ON montel.payments.number = adminweb.customers.phone,
+					(SELECT @row_num:= 0 AS num) as r
+					WHERE place = '$id'".($fromdate ? " and payments.datetime like '$fromdate%'":'')."
+					ORDER BY datetime DESC
+					LIMIT 1000;";
 	}
 	else {
-		$sql = "select pings.id, max(pings.datetime) as ping, payments.datetime as lastpay, collection.amount
-					FROM
-					montel.pings
-					inner JOIN (SELECT max(datetime) as datetime, place from montel.payments group by place) AS payments ON payments.place= pings.id
-					LEFT JOIN montel.collection ON collection.place= pings.id
-					group by pings.id;";
+		$sql = "SELECT pings.id, max(pings.datetime) as ping, payments.datetime as lastpay, collection.amount
+				FROM
+				montel.pings
+				inner JOIN (SELECT max(datetime) as datetime, place from montel.payments group by place) AS payments ON payments.place= pings.id
+				LEFT JOIN montel.collection ON collection.place= pings.id
+				group by pings.id;";
 	}
 	try {
 			$result = $db->query($sql);
@@ -255,14 +273,16 @@ Flight::route('GET /terminals', function () {
 Flight::route('GET /noTerminals', function () {
 	$db = Flight::db();
 	$sql = "SELECT
+			@row_num:= @row_num + 1 as row_num,
 			Max(payments.datetime) AS datetime,
-			payments.place,
+			payments.place as id,
 			collection.amount
 			FROM
 			montel.payments
-			LEFT JOIN montel.collection ON payments.place = collection.place
+			LEFT JOIN montel.collection ON payments.place = collection.place,
+			(SELECT @row_num:= 0 AS num) as r
 			where not exists(select * from montel.pings where payments.place= pings.id)
-			group by place limit 500;";
+			group by payments.place limit 500;";
 	try {
 			$result = $db->query($sql);
 			echo '[';
@@ -439,8 +459,8 @@ Flight::route('GET /tmpxls', function () {
 				customers
 				INNER JOIN tariffs ON customers.tariff = tariffs.id
 				INNER JOIN bills ON customers.phone = bills.number
-				LEFT JOIN (select sum(amount) /100 as pay, number from montel.payments where amount > 0  and datetime > '2021-02-01' group by number ) as p on p.number = customers.phone
-				where `month` = '1,2021' and `status` = 1 and tFixAdd <> 0";
+				LEFT JOIN (select sum(amount) /100 as pay, number from montel.payments where amount > 0  and datetime > '2021-03-01' group by number ) as p on p.number = customers.phone
+				where `month` = '2,2021' and `status` = 1 and tFixAdd <> 0";
 	}
 	try {
 		$result = $db->query($sql);
@@ -475,7 +495,7 @@ Flight::route('GET /customers', function () {
 	elseif($filter == "balance" && $val == 2)
 		$where = "status = 1"; //ROUND(payments-expenses,2) >= 0 and 
 	elseif($filter == "new")
-		$where = " `status` = '1' AND (`lastpaydate` IS NULL OR `payments` = '0' AND `phone` < '50000') ";
+		$where = " `status` = '1' AND (MONTH(created) = MONTH(CURRENT_DATE - INTERVAL 1 MONTH) or name = '')";
 	$db = Flight::db();
 	$sql = "select id,credit,name,email,phone,status,ROUND(balance,2) as balance, Facebook,description, tariff, created, payments, ROUND(expenses,2) as expenses  
 			from customers".($where?" WHERE $where":'');
